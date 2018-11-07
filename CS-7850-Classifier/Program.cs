@@ -23,14 +23,24 @@ namespace CS_7850_Classifier
             IncomeDecision(incomeTrainingDataset, incomeTestingDataset);
         }
 
-        //trainingOrTesting = 0 means get training data, = 1 means get testing data
+        //Method to load in a dataset from one of the CSVs (training or testing)
+        //trainingOrTesting variable: = 0 means get training data, = 1 means get testing data
         public static DataTable LoadIncomeDataset(int trainingOrTesting)
         {
             var rowCount = 0;
             StreamReader reader;
-            DataTable dataset = new DataTable("Income Dataset");
+            DataTable dataset;
+            if (trainingOrTesting == 0)
+            {
+                dataset = new DataTable("Income Training Dataset");
+            }
+            else
+            {
+                dataset = new DataTable("Income Testing Dataset");
+            }
+            
 
-            //Try stripping out all discrete data - unsure how to binarize.
+            //Stripping out all discrete string data - unsure how to binarize.
             dataset.Columns.Add("RowNumber");
             dataset.Columns.Add("Age");
             //dataset.Columns.Add("WorkClass");
@@ -82,7 +92,6 @@ namespace CS_7850_Classifier
                 var salary = 0;
 
                 //Binarize data based on medians of range
-
                 if(Convert.ToInt32(values[0]) <= 53.5)
                 {
                     age = 0;
@@ -155,8 +164,10 @@ namespace CS_7850_Classifier
                     salary = 1;
                 }
 
+                //Add row to dataset 
                 dataset.Rows.Add(rowCount, age, finalWeight, educationNum, sex, capitalGain, capitalLoss, hoursPerWeek, salary);
 
+                //Increment row count
                 rowCount++;
             }
 
@@ -164,8 +175,10 @@ namespace CS_7850_Classifier
 
         }
 
+        //Run decision tree with trainig and testing datasets given.
         public static void IncomeDecision(DataTable incomeTrainingDataset, DataTable incomeTestingDataset)
         {
+            //Set up which attributes from dataset will be used for the decision tree.
             DecisionVariable[] attributes =
             {
                 new DecisionVariable("Age", 2), new DecisionVariable("FinalWeight", 2), new DecisionVariable("EducationNum", 2),
@@ -173,20 +186,27 @@ namespace CS_7850_Classifier
                 new DecisionVariable("HoursPerWeek", 2)
             };
 
+            //Set up how many output classes there will be (2; <=50k, >50k)
             int outputClassCount = 2;
 
+            //Create decision tree
             DecisionTree tree = new DecisionTree(attributes, outputClassCount);
+
 
             ID3Learning id3Algorithm = new ID3Learning(tree);
 
+            //Get arrays for training inputs and outputs.
             int[][] trainingInputs = incomeTrainingDataset.ToJagged<int>("Age", "FinalWeight", "EducationNum", "Sex", "CapitalGain", "CapitalLoss", "HoursPerWeek");
             int[] trainingOutputs = incomeTrainingDataset.ToJagged<int>("Salary").GetColumn(0);
 
+            //Build tree from learning
             id3Algorithm.Learn(trainingInputs, trainingOutputs);
 
-            double[][] testingInputs = incomeTestingDataset.ToJagged("Age", "FinalWeight", "EducationNum", "Sex", "CapitalGain", "CapitalLoss", "HoursPerWeek");
+            //Get arrays for testing inputs and outputs
+            int[][] testingInputs = incomeTestingDataset.ToJagged<int>("Age", "FinalWeight", "EducationNum", "Sex", "CapitalGain", "CapitalLoss", "HoursPerWeek");
             int[] testingOutputs = incomeTestingDataset.ToJagged<int>("Salary").GetColumn(0);
 
+            //Run classifier on testing inputs and get classified outputs
             int[] treeTestingOutputs = tree.Decide(testingInputs);
 
             //ScatterplotBox.Show();
@@ -196,10 +216,10 @@ namespace CS_7850_Classifier
             //    .Hold();
 
 
+            //Calculate accuracy
             double totalOutputs = 0;
             double totalCorrectOutputs = 0;
-
-            //Calculate accuracy
+                        
             for(int i = 0; i < testingOutputs.Length; i++)
             {
                 if(testingOutputs[i] == treeTestingOutputs[i])
@@ -210,6 +230,8 @@ namespace CS_7850_Classifier
                 totalOutputs++;
             }
 
+            //76.85% accuracy on base dataset - slightly lower than paper
+            //This is likely due to stripping out string-based attributes as well as simply a different ID3 algorithm.
             double accuracyScore = totalCorrectOutputs / totalOutputs;
 
         }
