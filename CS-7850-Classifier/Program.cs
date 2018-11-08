@@ -20,7 +20,7 @@ namespace CS_7850_Classifier
         {
             DataTable incomeTrainingDataset = LoadIncomeDataset(0);
             DataTable incomeTestingDataset = LoadIncomeDataset(1);
-            IncomeDecision(incomeTrainingDataset, incomeTestingDataset);
+            double incomeBaseAccuracy = IncomeDecision(incomeTrainingDataset, incomeTestingDataset);
         }
 
         //Method to load in a dataset from one of the CSVs (training or testing)
@@ -176,7 +176,7 @@ namespace CS_7850_Classifier
         }
 
         //Run decision tree with trainig and testing datasets given.
-        public static void IncomeDecision(DataTable incomeTrainingDataset, DataTable incomeTestingDataset)
+        public static double IncomeDecision(DataTable incomeTrainingDataset, DataTable incomeTestingDataset)
         {
             //Set up which attributes from dataset will be used for the decision tree.
             DecisionVariable[] attributes =
@@ -194,7 +194,6 @@ namespace CS_7850_Classifier
 
 
             ID3Learning id3Algorithm = new ID3Learning(tree);
-
             //Get arrays for training inputs and outputs.
             int[][] trainingInputs = incomeTrainingDataset.ToJagged<int>("Age", "FinalWeight", "EducationNum", "Sex", "CapitalGain", "CapitalLoss", "HoursPerWeek");
             int[] trainingOutputs = incomeTrainingDataset.ToJagged<int>("Salary").GetColumn(0);
@@ -233,7 +232,7 @@ namespace CS_7850_Classifier
             //76.85% accuracy on base dataset - slightly lower than paper
             //This is likely due to stripping out string-based attributes as well as simply a different ID3 algorithm.
             double accuracyScore = totalCorrectOutputs / totalOutputs;
-
+            return accuracyScore;
         }
     }
 }
