@@ -20,7 +20,10 @@ namespace CS_7850_Classifier
         {
             DataTable incomeTrainingDataset = LoadIncomeDataset(0);
             DataTable incomeTestingDataset = LoadIncomeDataset(1);
-            double incomeBaseAccuracy = IncomeDecision(incomeTrainingDataset, incomeTestingDataset);
+            double baseIncomeAccuracy = IncomeDecision(incomeTrainingDataset, incomeTestingDataset);
+            DataTable randomizedIncomeTrainingDataset01 = RandomizeIncomeDataset(incomeTrainingDataset, 0, 0.1);
+            DataTable randomizedIncomeTestingDataset01 = RandomizeIncomeDataset(incomeTestingDataset, 1, 0.1);
+            double randomizedIncomeAccuracy = ModifiedIncomeDecision(randomizedIncomeTrainingDataset01, randomizedIncomeTestingDataset01);
         }
 
         //Method to load in a dataset from one of the CSVs (training or testing)
@@ -222,6 +225,99 @@ namespace CS_7850_Classifier
             for(int i = 0; i < testingOutputs.Length; i++)
             {
                 if(testingOutputs[i] == treeTestingOutputs[i])
+                {
+                    totalCorrectOutputs++;
+                }
+
+                totalOutputs++;
+            }
+
+            //76.85% accuracy on base dataset - slightly lower than paper
+            //This is likely due to stripping out string-based attributes as well as simply a different ID3 algorithm.
+            double accuracyScore = totalCorrectOutputs / totalOutputs;
+            return accuracyScore;
+        }
+
+
+        //trainingOrTesting variable: = 0 means get training data, = 1 means get testing data
+        //Theta is the likelihood of flipping the response.
+        public static DataTable RandomizeIncomeDataset(DataTable incomeDataset, int trainingOrTesting, double theta)
+        {
+            //Initialize RNG
+            Random rand = new Random(Guid.NewGuid().GetHashCode());
+            //Iterate through all rows of datatable
+            foreach(DataRow row in incomeDataset.Rows)
+            {
+                //Generate new number from 0 to 1 (including 1, not including 0).
+                //1 - rand is because NextDouble generates from 0 inclusive to 1 non-inclusive.  1 - rand
+                //return 0 non-inclusive to 1 inclusive.
+                double generatedNumber = 1 - rand.NextDouble();
+                //If generated number is greater than the theta provided, leave the response unchanged
+                if(generatedNumber > theta)
+                {
+                    //Get current row's salary response
+                    var salary = row["Salary"];
+                    int newSalary = 0;   
+                    //Flip salary
+                    if(Convert.ToInt32(salary) == 0)
+                    {
+                        newSalary = 1;
+                    }
+                    //Insert new flipped salary into datatable.
+                    row["Salary"] = newSalary;
+                }
+                
+            }
+
+            return incomeDataset;
+        }
+
+        public static double ModifiedIncomeDecision(DataTable incomeTrainingDataset, DataTable incomeTestingDataset)
+        {
+            //Set up which attributes from dataset will be used for the decision tree.
+            ModifiedDecisionVariable[] attributes =
+            {
+                new ModifiedDecisionVariable("Age", 2), new ModifiedDecisionVariable("FinalWeight", 2), new ModifiedDecisionVariable("EducationNum", 2),
+                new ModifiedDecisionVariable("Sex", 2), new ModifiedDecisionVariable("CapitalGain", 2), new ModifiedDecisionVariable("CapitalLoss", 2),
+                new ModifiedDecisionVariable("HoursPerWeek", 2)
+            };
+
+            //Set up how many output classes there will be (2; <=50k, >50k)
+            int outputClassCount = 2;
+
+            //Create decision tree
+            ModifiedDecisionTree tree = new ModifiedDecisionTree(attributes, outputClassCount);
+
+
+            ModifiedID3Learning id3Algorithm = new ModifiedID3Learning(tree);
+            //Get arrays for training inputs and outputs.
+            int[][] trainingInputs = incomeTrainingDataset.ToJagged<int>("Age", "FinalWeight", "EducationNum", "Sex", "CapitalGain", "CapitalLoss", "HoursPerWeek");
+            int[] trainingOutputs = incomeTrainingDataset.ToJagged<int>("Salary").GetColumn(0);
+
+            //Build tree from learning
+            id3Algorithm.Learn(trainingInputs, trainingOutputs);
+
+            //Get arrays for testing inputs and outputs
+            int[][] testingInputs = incomeTestingDataset.ToJagged<int>("Age", "FinalWeight", "EducationNum", "Sex", "CapitalGain", "CapitalLoss", "HoursPerWeek");
+            int[] testingOutputs = incomeTestingDataset.ToJagged<int>("Salary").GetColumn(0);
+
+            //Run classifier on testing inputs and get classified outputs
+            int[] treeTestingOutputs = tree.Decide(testingInputs);
+
+            //ScatterplotBox.Show();
+            //ScatterplotBox.Show("Expected vs. Real", testingOutputs, treeTestingOutputs);
+            //ScatterplotBox.Show("Expected results", testingInputs, testingOutputs);
+            //ScatterplotBox.Show("Decision Tree results", testingInputs, treeTestingOutputs)
+            //    .Hold();
+
+
+            //Calculate accuracy
+            double totalOutputs = 0;
+            double totalCorrectOutputs = 0;
+
+            for (int i = 0; i < testingOutputs.Length; i++)
+            {
+                if (testingOutputs[i] == treeTestingOutputs[i])
                 {
                     totalCorrectOutputs++;
                 }
