@@ -1426,6 +1426,42 @@ namespace ModifiedAccord.Statistics
         /// <param name="values">An array of integer symbols.</param>
         /// <param name="startValue">The starting symbol.</param>
         /// <param name="endValue">The ending symbol.</param>
+        /// <returns>The evaluated entropy.</returns>
+        /// 
+        public static double Entropy(int[] values, int startValue, int endValue, double theta)
+        {
+            double entropy = 0;
+
+            // For each class
+            for (int c = startValue; c <= endValue; c++)
+            {
+                int count = 0;
+
+                // Count the number of instances inside
+                for (int i = 0; i < values.Length; i++)
+                    if (values[i] == c)
+                        count++;
+
+                if (count > 0)
+                {
+                    // Avoid situations limiting situations
+                    //  by forcing 0 * Math.Log(0) to be 0.
+
+                    double p = count / (double)values.Length;
+                    entropy -= p * Math.Log(p, 2);
+                }
+            }
+
+            return entropy;
+        }
+
+        /// <summary>
+        ///   Computes the entropy for the given values.
+        /// </summary>
+        /// 
+        /// <param name="values">An array of integer symbols.</param>
+        /// <param name="startValue">The starting symbol.</param>
+        /// <param name="endValue">The ending symbol.</param>
         /// <param name="weights">The importance for each sample.</param>
         /// 
         /// <returns>The evaluated entropy.</returns>
@@ -1625,6 +1661,19 @@ namespace ModifiedAccord.Statistics
         public static double Entropy(int[] values, int classes)
         {
             return Entropy(values, 0, classes - 1);
+        }
+
+        /// <summary>
+        ///   Computes the entropy for the given values.
+        /// </summary>
+        /// 
+        /// <param name="values">An array of integer symbols.</param>
+        /// <param name="classes">The number of distinct classes.</param>
+        /// <returns>The evaluated entropy.</returns>
+        /// 
+        public static double Entropy(int[] values, int classes, double theta)
+        {
+            return Entropy(values, 0, classes - 1, theta);
         }
 
         /// <summary>

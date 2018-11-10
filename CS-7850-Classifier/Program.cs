@@ -16,14 +16,15 @@ namespace CS_7850_Classifier
 {
     class Program
     {
+        //Not disguising the testing dataset, so don't need to worry about that calculation.
         static void Main(string[] args)
         {
             DataTable incomeTrainingDataset = LoadIncomeDataset(0);
             DataTable incomeTestingDataset = LoadIncomeDataset(1);
-            double baseIncomeAccuracy = IncomeDecision(incomeTrainingDataset, incomeTestingDataset);
-            DataTable randomizedIncomeTrainingDataset01 = RandomizeIncomeDataset(incomeTrainingDataset, 0, 0.1);
-            DataTable randomizedIncomeTestingDataset01 = RandomizeIncomeDataset(incomeTestingDataset, 1, 0.1);
-            double randomizedIncomeAccuracy = ModifiedIncomeDecision(randomizedIncomeTrainingDataset01, randomizedIncomeTestingDataset01);
+            double benchmarkIncomeAccuracy = IncomeDecision(incomeTrainingDataset, incomeTestingDataset);
+            DataTable randomizedIncomeTrainingDataset01 = RandomizeIncomeDataset(incomeTrainingDataset, 0, 0);
+            //DataTable randomizedIncomeTestingDataset01 = RandomizeIncomeDataset(incomeTestingDataset, 1, 0.1);
+            double randomizedIncomeAccuracy = ModifiedIncomeDecision(randomizedIncomeTrainingDataset01, incomeTestingDataset, 0);
         }
 
         //Method to load in a dataset from one of the CSVs (training or testing)
@@ -59,7 +60,7 @@ namespace CS_7850_Classifier
             dataset.Columns.Add("CapitalLoss");
             dataset.Columns.Add("HoursPerWeek");
             //dataset.Columns.Add("NativeCountry");
-            dataset.Columns.Add("Salary");
+            dataset.Columns.Add("SalaryLabel");
 
             //Ranges and median of range for each continuous column:
             //Age: 17 - 90; Median: 53.5
@@ -199,14 +200,14 @@ namespace CS_7850_Classifier
             ID3Learning id3Algorithm = new ID3Learning(tree);
             //Get arrays for training inputs and outputs.
             int[][] trainingInputs = incomeTrainingDataset.ToJagged<int>("Age", "FinalWeight", "EducationNum", "Sex", "CapitalGain", "CapitalLoss", "HoursPerWeek");
-            int[] trainingOutputs = incomeTrainingDataset.ToJagged<int>("Salary").GetColumn(0);
+            int[] trainingOutputs = incomeTrainingDataset.ToJagged<int>("SalaryLabel").GetColumn(0);
 
             //Build tree from learning
             id3Algorithm.Learn(trainingInputs, trainingOutputs);
 
             //Get arrays for testing inputs and outputs
             int[][] testingInputs = incomeTestingDataset.ToJagged<int>("Age", "FinalWeight", "EducationNum", "Sex", "CapitalGain", "CapitalLoss", "HoursPerWeek");
-            int[] testingOutputs = incomeTestingDataset.ToJagged<int>("Salary").GetColumn(0);
+            int[] testingOutputs = incomeTestingDataset.ToJagged<int>("SalaryLabel").GetColumn(0);
 
             //Run classifier on testing inputs and get classified outputs
             int[] treeTestingOutputs = tree.Decide(testingInputs);
@@ -243,10 +244,12 @@ namespace CS_7850_Classifier
         //Theta is the likelihood of flipping the response.
         public static DataTable RandomizeIncomeDataset(DataTable incomeDataset, int trainingOrTesting, double theta)
         {
+            DataTable randomizedDataset = new DataTable("Randomized Income Dataset");
+            randomizedDataset = incomeDataset.Copy();
             //Initialize RNG
             Random rand = new Random(Guid.NewGuid().GetHashCode());
             //Iterate through all rows of datatable
-            foreach(DataRow row in incomeDataset.Rows)
+            foreach(DataRow row in randomizedDataset.Rows)
             {
                 //Generate new number from 0 to 1 (including 1, not including 0).
                 //1 - rand is because NextDouble generates from 0 inclusive to 1 non-inclusive.  1 - rand
@@ -256,23 +259,69 @@ namespace CS_7850_Classifier
                 if(generatedNumber > theta)
                 {
                     //Get current row's salary response
-                    var salary = row["Salary"];
-                    int newSalary = 0;   
+                    var age = row["Age"];
+                    var finalWeight = row["FinalWeight"];
+                    var educationNum = row["EducationNum"];
+                    var sex  = row["Sex"];
+                    var capitalGain = row["CapitalGain"];
+                    var capitalLoss = row["CapitalLoss"];
+                    var hoursPerWeek = row["HoursPerWeek"];
+                    //dataset.Columns.Add("SalaryLabel");
+                    //int newSalary = 0;   
+                    int newAge = 0;
+                    int newFinalWeight = 0;
+                    int newEducationNum = 0;
+                    int newSex = 0;
+                    int newCapitalGain = 0;
+                    int newCapitalLoss = 0;
+                    int newHoursPerWeek = 0;
+
                     //Flip salary
-                    if(Convert.ToInt32(salary) == 0)
+                    if(Convert.ToInt32(age) == 0)
                     {
-                        newSalary = 1;
+                        newAge = 1;
                     }
-                    //Insert new flipped salary into datatable.
-                    row["Salary"] = newSalary;
+                    if (Convert.ToInt32(finalWeight) == 0)
+                    {
+                        newFinalWeight = 1;
+                    }
+                    if (Convert.ToInt32(educationNum) == 0)
+                    {
+                        newEducationNum = 1;
+                    }
+                    if (Convert.ToInt32(sex) == 0)
+                    {
+                        newSex = 1;
+                    }
+                    if (Convert.ToInt32(capitalGain) == 0)
+                    {
+                        newCapitalGain = 1;
+                    }
+                    if (Convert.ToInt32(capitalLoss) == 0)
+                    {
+                        newCapitalLoss = 1;
+                    }
+                    if (Convert.ToInt32(hoursPerWeek) == 0)
+                    {
+                        newHoursPerWeek = 1;
+                    }
+                    //Insert flipped attributes into datatable.
+                    //row["Salary"] = newSalary;
+                    row["Age"] = newAge;
+                    row["FinalWeight"] = newFinalWeight;
+                    row["EducationNum"] = newEducationNum;
+                    row["Sex"] = newSex;
+                    row["CapitalGain"] = newCapitalGain;
+                    row["CapitalLoss"] = newCapitalLoss;
+                    row["HoursPerWeek"] = newHoursPerWeek;
                 }
                 
             }
 
-            return incomeDataset;
+            return randomizedDataset;
         }
 
-        public static double ModifiedIncomeDecision(DataTable incomeTrainingDataset, DataTable incomeTestingDataset)
+        public static double ModifiedIncomeDecision(DataTable incomeTrainingDataset, DataTable incomeTestingDataset, double theta)
         {
             //Set up which attributes from dataset will be used for the decision tree.
             ModifiedDecisionVariable[] attributes =
@@ -292,14 +341,14 @@ namespace CS_7850_Classifier
             ModifiedID3Learning id3Algorithm = new ModifiedID3Learning(tree);
             //Get arrays for training inputs and outputs.
             int[][] trainingInputs = incomeTrainingDataset.ToJagged<int>("Age", "FinalWeight", "EducationNum", "Sex", "CapitalGain", "CapitalLoss", "HoursPerWeek");
-            int[] trainingOutputs = incomeTrainingDataset.ToJagged<int>("Salary").GetColumn(0);
+            int[] trainingOutputs = incomeTrainingDataset.ToJagged<int>("SalaryLabel").GetColumn(0);
 
             //Build tree from learning
-            id3Algorithm.Learn(trainingInputs, trainingOutputs);
+            id3Algorithm.Learn(trainingInputs, trainingOutputs, theta);
 
             //Get arrays for testing inputs and outputs
             int[][] testingInputs = incomeTestingDataset.ToJagged<int>("Age", "FinalWeight", "EducationNum", "Sex", "CapitalGain", "CapitalLoss", "HoursPerWeek");
-            int[] testingOutputs = incomeTestingDataset.ToJagged<int>("Salary").GetColumn(0);
+            int[] testingOutputs = incomeTestingDataset.ToJagged<int>("SalaryLabel").GetColumn(0);
 
             //Run classifier on testing inputs and get classified outputs
             int[] treeTestingOutputs = tree.Decide(testingInputs);
