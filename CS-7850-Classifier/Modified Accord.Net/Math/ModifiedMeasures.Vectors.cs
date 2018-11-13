@@ -1419,6 +1419,64 @@ namespace ModifiedAccord.Statistics
             return entropy;
         }
 
+        public static double Entropy(int[][] input, int[] output, int startValue, int endValue, double theta, double magnitudeOfS)
+        {
+
+            double numberOfItemsInSet = output.Length;
+            double entropy = 0;
+            double Q0PE = 0;
+
+            // Get Q0 from count of values with class 0
+            int count = 0;
+
+            // Count the number of instances inside
+            for (int i = 0; i < output.Length; i++)
+                if (output[i] == 0)
+                    count++;
+
+            if(count == 0)
+            {
+                Q0PE = 0;
+            }
+
+            if (count > 0)
+            {
+                double Q0PEestimate = (double)count / 5000.0;
+                //double magnitudeOfS = 0;
+                if (Q0PEestimate == 1)
+                {
+                    Q0PE = 1;
+                }
+                else
+                {
+                    if(output.Length == 5000)
+                    {
+                        Q0PE = Q0PEestimate;
+                    }
+                    else
+                    {
+                        double STopHalf = Q0PEestimate - (1 - theta);
+                        double bottomHalf = (2 * theta) - 1;
+                        Q0PE = STopHalf / bottomHalf;
+                    }
+                    
+                }
+                // Avoid situations limiting situations
+                //  by forcing 0 * Math.Log(0) to be 0.
+
+
+            }
+
+            double Q0 = (Q0PE * 5000.0) / magnitudeOfS;
+            double Q1 = 1 - Q0;
+            //double p = count / (double)output.Length;
+            entropy -= Q0 * Math.Log(Q0, 2);
+            entropy -= Q1 * Math.Log(Q1, 2);
+
+            return entropy;
+        }
+
+
         /// <summary>
         ///   Computes the entropy for the given values.
         /// </summary>
@@ -1428,32 +1486,41 @@ namespace ModifiedAccord.Statistics
         /// <param name="endValue">The ending symbol.</param>
         /// <returns>The evaluated entropy.</returns>
         /// 
-        public static double Entropy(int[] values, int startValue, int endValue, double theta)
-        {
-            double entropy = 0;
+        //public static double Entropy(int[][] input, int[] output, int startValue, int endValue, double theta, double magnitudeOfS)
+        //{
+        //    double entropy = 0;
 
-            // For each class
-            for (int c = startValue; c <= endValue; c++)
-            {
-                int count = 0;
+        //    //Since we are not disguising class labels, we don't need to worry about that calculation.
+        //    //We must get every E (a certain set of attributes, such as 001 or 101).
 
-                // Count the number of instances inside
-                for (int i = 0; i < values.Length; i++)
-                    if (values[i] == c)
-                        count++;
+        //    //double PEestimate = (double)output.Length / 5000.0;
+        //    //double topHalf = PEestimate - (1 - theta);
+        //    //double bottomHalf = (2 * theta) - 1;
+        //    // For Class 0 (since this is binary we only need classes 0 and 1 (Q1 can be derived from Q0)
+        //    int count = 0;
+        //    // Count the number of instances inside
 
-                if (count > 0)
-                {
-                    // Avoid situations limiting situations
-                    //  by forcing 0 * Math.Log(0) to be 0.
+        //    for (int i = 0; i < output.Length; i++) {
+        //        if (output[i] == 0)
+        //            count++;
+        //    }
+        //    if (count > 0)
+        //    {
+        //        //double Q0PEestimate = (double)count / 5000.0;
+        //        //double Q0TopHalf = Q0PEestimate - (1 - theta);
+        //        //double Q0BottomHalf = (2 * theta) - 1;
+        //        //double Q0 = ((Q0TopHalf / Q0BottomHalf) * 5000.0)/magnitudeOfS;
+        //        //double Q1 = 1 - Q0;
+        //        // Avoid situations limiting situations
+        //        //  by forcing 0 * Math.Log(0) to be 0.
 
-                    double p = count / (double)values.Length;
-                    entropy -= p * Math.Log(p, 2);
-                }
-            }
+        //       double p = count / (double)output.Length;
+        //       //entropy -= Q0 * Math.Log(Q0, 2);
+        //       //entropy -= Q1 * Math.Log(Q1, 2);
+        //    }
 
-            return entropy;
-        }
+        //    return entropy;
+        //}
 
         /// <summary>
         ///   Computes the entropy for the given values.
@@ -1671,10 +1738,23 @@ namespace ModifiedAccord.Statistics
         /// <param name="classes">The number of distinct classes.</param>
         /// <returns>The evaluated entropy.</returns>
         /// 
-        public static double Entropy(int[] values, int classes, double theta)
+        public static double Entropy(int[][] input, int[] output, int classes, double theta, double magnitudeOfS)
         {
-            return Entropy(values, 0, classes - 1, theta);
+            return Entropy(input, output, 0, classes - 1, theta, magnitudeOfS);
         }
+
+        /// <summary>
+        ///   Computes the entropy for the given values.
+        /// </summary>
+        /// 
+        /// <param name="values">An array of integer symbols.</param>
+        /// <param name="classes">The number of distinct classes.</param>
+        /// <returns>The evaluated entropy.</returns>
+        /// 
+        //public static double BaseEntropy(int[][] input, int[] output, int classes, double theta, double magnitudeOfS)
+        //{
+        //    return BaseEntropy(input, output, 0, classes - 1, theta, magnitudeOfS);
+        //}
 
         /// <summary>
         ///   Computes the entropy for the given values.

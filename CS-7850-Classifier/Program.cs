@@ -19,12 +19,14 @@ namespace CS_7850_Classifier
         //Not disguising the testing dataset, so don't need to worry about that calculation.
         static void Main(string[] args)
         {
+            double theta = 0.51;
             DataTable incomeTrainingDataset = LoadIncomeDataset(0);
             DataTable incomeTestingDataset = LoadIncomeDataset(1);
             double benchmarkIncomeAccuracy = IncomeDecision(incomeTrainingDataset, incomeTestingDataset);
-            DataTable randomizedIncomeTrainingDataset01 = RandomizeIncomeDataset(incomeTrainingDataset, 0, 0);
-            //DataTable randomizedIncomeTestingDataset01 = RandomizeIncomeDataset(incomeTestingDataset, 1, 0.1);
-            double randomizedIncomeAccuracy = ModifiedIncomeDecision(randomizedIncomeTrainingDataset01, incomeTestingDataset, 0);
+            DataTable randomizedIncomeTrainingDataset01 = RandomizeIncomeDataset(incomeTrainingDataset, 0, theta);
+            DataTable randomizedIncomeTestingDataset01 = RandomizeIncomeDataset(incomeTestingDataset, 1, theta);
+            double randomizedIncomeAccuracy = ModifiedIncomeDecision(randomizedIncomeTrainingDataset01, randomizedIncomeTestingDataset01, theta);
+            //double randomizedIncomeAccuracy = IncomeDecision(randomizedIncomeTrainingDataset01, incomeTestingDataset);
         }
 
         //Method to load in a dataset from one of the CSVs (training or testing)

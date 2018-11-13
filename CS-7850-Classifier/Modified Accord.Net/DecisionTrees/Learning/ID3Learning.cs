@@ -272,9 +272,25 @@ namespace Accord.MachineLearning.DecisionTrees.Learning
 
         private void split(DecisionNode root, int[][] input, int[] output, int height, double theta)
         {
-            // 2. If all examples are for the same class, return the single-node
-            //    tree with the output label corresponding to this common class.
-            double entropy = ModifiedMeasures.Entropy(output, Model.NumberOfClasses, theta);
+            double SPEestimate = (double)output.Length / 5000.0;
+            double magnitudeOfS = 0;
+            double SPE = 0;
+            if(SPEestimate == 1)
+            {
+                SPE = 1;
+            }
+            else
+            {
+                double STopHalf = SPEestimate - (1 - theta);
+                double bottomHalf = (2 * theta) - 1;
+                SPE = STopHalf / bottomHalf;
+            }
+            magnitudeOfS = SPE * output.Length;
+
+
+            //// 2. If all examples are for the same class, return the single-node
+            ////    tree with the output label corresponding to this common class.
+            double entropy = ModifiedMeasures.Entropy(input, output, Model.NumberOfClasses, theta, magnitudeOfS);
 
             if (entropy == 0)
             {
@@ -282,6 +298,25 @@ namespace Accord.MachineLearning.DecisionTrees.Learning
                     root.Output = output[0];
                 return;
             }
+
+            //If S consists of samples with all the same class C, return V as leaf node
+            //int numberOfItemsWithClass0 = 0;
+            //for(int i = 0; i < output.Length; i++)
+            //{
+            //    if(output[i] == 0)
+            //    {
+            //        numberOfItemsWithClass0++;
+            //    }
+            //}
+            //if (numberOfItemsWithClass0 == 0 || numberOfItemsWithClass0 == output.Length)
+            //{
+            //    if(output.Length > 0)
+            //    {
+            //        root.Output = output[0];
+            //    }
+            //    return;
+            //}
+
 
             // 3. If number of predicting attributes is empty, then return the single-node
             //    tree with the output label corresponding to the most common value of
@@ -293,7 +328,15 @@ namespace Accord.MachineLearning.DecisionTrees.Learning
 
             if (candidates.Length == 0 || (MaxHeight > 0 && height == MaxHeight))
             {
-                root.Output = ModifiedMeasures.Mode(output);
+                if(output.Length == 0)
+                {
+                    root.Output = 0;
+                }
+                else
+                {
+                    root.Output = ModifiedMeasures.Mode(output);
+                }
+                
                 return;
             }
 
@@ -302,29 +345,17 @@ namespace Accord.MachineLearning.DecisionTrees.Learning
             //    is part of a random forest, only consider a percentage
             //    of the candidate attributes at each split point
 
-            if (MaxVariables > 0 && candidates.Length > MaxVariables)
-                candidates = Vector.Sample(candidates, MaxVariables);
+            //if (MaxVariables > 0 && candidates.Length > MaxVariables)
+            //    candidates = Vector.Sample(candidates, MaxVariables);
 
             double[] scores = new double[candidates.Length];
             int[][][] partitions = new int[candidates.Length][][];
             int[][][] outputSubs = new int[candidates.Length][][];
 
-            if (ParallelOptions.MaxDegreeOfParallelism == 1)
+            for (int i = 0; i < scores.Length; i++)
             {
-                for (int i = 0; i < scores.Length; i++)
-                {
-                    scores[i] = computeGainRatio(input, output, candidates[i],
-                        entropy, out partitions[i], out outputSubs[i], theta);
-                }
-            }
-            else
-            {             
-                // For each attribute in the data set
-                Parallel.For(0, scores.Length, ParallelOptions, i =>
-                {
-                    scores[i] = computeGainRatio(input, output, candidates[i],
-                        entropy, out partitions[i], out outputSubs[i], theta);
-                });
+                scores[i] = computeGainRatio(input, output, candidates[i],
+                    entropy, out partitions[i], out outputSubs[i], theta, magnitudeOfS);
             }
 
             // Select the attribute with maximum gain ratio
@@ -374,9 +405,11 @@ namespace Accord.MachineLearning.DecisionTrees.Learning
 
         //private void split(DecisionNode root, int[][] input, int[] output, int height, double theta)
         //{
+
+
         //    // 2. If all examples are for the same class, return the single-node
         //    //    tree with the output label corresponding to this common class.
-        //    double entropy = ModifiedMeasures.Entropy(output, Model.NumberOfClasses, theta);
+        //    double entropy = ModifiedMeasures.BaseEntropy(input, output, Model.NumberOfClasses, theta);
 
         //    if (entropy == 0)
         //    {
@@ -404,29 +437,17 @@ namespace Accord.MachineLearning.DecisionTrees.Learning
         //    //    is part of a random forest, only consider a percentage
         //    //    of the candidate attributes at each split point
 
-        //    if (MaxVariables > 0 && candidates.Length > MaxVariables)
-        //        candidates = Vector.Sample(candidates, MaxVariables);
+        //    //if (MaxVariables > 0 && candidates.Length > MaxVariables)
+        //    //    candidates = Vector.Sample(candidates, MaxVariables);
 
         //    double[] scores = new double[candidates.Length];
         //    int[][][] partitions = new int[candidates.Length][][];
         //    int[][][] outputSubs = new int[candidates.Length][][];
 
-        //    if (ParallelOptions.MaxDegreeOfParallelism == 1)
+        //    for (int i = 0; i < scores.Length; i++)
         //    {
-        //        for (int i = 0; i < scores.Length; i++)
-        //        {
-        //            scores[i] = computeGainRatio(input, output, candidates[i],
-        //                entropy, out partitions[i], out outputSubs[i], theta);
-        //        }
-        //    }
-        //    else
-        //    {
-        //        // For each attribute in the data set
-        //        Parallel.For(0, scores.Length, ParallelOptions, i =>
-        //        {
-        //            scores[i] = computeGainRatio(input, output, candidates[i],
-        //                entropy, out partitions[i], out outputSubs[i], theta);
-        //        });
+        //        scores[i] = computeGainRatio(input, output, candidates[i],
+        //            entropy, out partitions[i], out outputSubs[i], theta);
         //    }
 
         //    // Select the attribute with maximum gain ratio
@@ -509,7 +530,7 @@ namespace Accord.MachineLearning.DecisionTrees.Learning
         }
 
         private double computeInfo(int[][] input, int[] output, int attributeIndex,
-     out int[][] partitions, out int[][] outputSubset, double theta)
+     out int[][] partitions, out int[][] outputSubset, double theta, double magnitudeOfS)
         {
             // Compute the information gain obtained by using
             // this current attribute as the next decision node.
@@ -523,7 +544,7 @@ namespace Accord.MachineLearning.DecisionTrees.Learning
             // For each possible value of the attribute
             for (int i = 0; i < partitions.Length; i++)
             {
-                int value = valueRange.Min + i;
+               int value = valueRange.Min + i;
 
                 // Partition the remaining data set
                 // according to the attribute values
@@ -533,10 +554,48 @@ namespace Accord.MachineLearning.DecisionTrees.Learning
                 // of this node, check which have the same value
                 outputSubset[i] = output.Get(partitions[i]);
 
+                double SvPEestimate = (double)outputSubset.Length / 5000.0;
+                double magnitudeOfSv = 0;
+                double SvPE = 0;
+                if (SvPEestimate == 1)
+                {
+                    SvPE = 1;
+                }
+                else
+                {
+                    double STopHalf = SvPEestimate - (1 - theta);
+                    double bottomHalf = (2 * theta) - 1;
+                    SvPE = STopHalf / bottomHalf;
+                }
+                magnitudeOfSv = SvPE * outputSubset.Length;
                 // Check the entropy gain originating from this partitioning
-                double e = ModifiedMeasures.Entropy(outputSubset[i], Model.NumberOfClasses, theta);
+                double e = ModifiedMeasures.Entropy(input, outputSubset[i], Model.NumberOfClasses, theta, magnitudeOfSv);
 
-                info += (outputSubset[i].Length / (double)output.Length) * e;
+
+                //for (int c = 0; c <= Model.NumberOfClasses - 1; c++)
+                //{
+                //    int count = 0;
+
+                //    // Count the number of instances inside
+                //    for (int j = 0; j < output.Length; j++)
+                //        if (output[j] == c)
+                //            count++;
+
+                //    if (count > 0)
+                //    {
+                //        double SvPEestimate = (double)count / 5000.0;
+                //        double SvTophalf = SvPEestimate - (1 - theta);
+                //        double magnitudeOfSv = ((SvTophalf / bottomHalf) * 5000.0) / magnitudeOfS;
+
+
+                //        //double magnitudeOfSv = (((double)outputSubset[i].Length - 1 + theta) / (2 * theta) - 1) * 5000;
+
+                        info += (magnitudeOfSv / magnitudeOfS) * e;
+                //    }
+                //}
+
+                //Hardcoding 5000 as the number of records in whole training dataset
+
             }
 
             return info;
@@ -550,9 +609,9 @@ namespace Accord.MachineLearning.DecisionTrees.Learning
         }
 
         private double computeInfoGain(int[][] input, int[] output, int attributeIndex,
-    double entropy, out int[][] partitions, out int[][] outputSubset, double theta)
+    double entropy, out int[][] partitions, out int[][] outputSubset, double theta, double magnitudeOfS)
         {
-            return entropy - computeInfo(input, output, attributeIndex, out partitions, out outputSubset, theta);
+            return entropy - computeInfo(input, output, attributeIndex, out partitions, out outputSubset, theta, magnitudeOfS);
         }
 
         private double computeGainRatio(int[][] input, int[] output, int attributeIndex,
@@ -565,9 +624,9 @@ namespace Accord.MachineLearning.DecisionTrees.Learning
         }
 
         private double computeGainRatio(int[][] input, int[] output, int attributeIndex,
-    double entropy, out int[][] partitions, out int[][] outputSubset, double theta)
+    double entropy, out int[][] partitions, out int[][] outputSubset, double theta, double magnitudeOfS)
         {
-            double infoGain = computeInfoGain(input, output, attributeIndex, entropy, out partitions, out outputSubset, theta);
+            double infoGain = computeInfoGain(input, output, attributeIndex, entropy, out partitions, out outputSubset, theta, magnitudeOfS);
             double splitInfo = SplitInformation(output.Length, partitions, theta);
 
             return infoGain == 0 ? 0 : infoGain / splitInfo;
