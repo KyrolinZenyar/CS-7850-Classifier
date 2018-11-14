@@ -226,35 +226,54 @@ namespace CS_7850_RR_Classifier
             topHalfOfPE = PStarE - (1 - theta);
             PE = topHalfOfPE / bottomHalf;
             //Magnitude of S = P(E) * n where n is the total number of items in the dataset and P(E) is calculated based on P*(E) and theta.
-            if (theta > 0.5)
-            {
-                if (PStarE >= theta)
-                {
-                    PE = 1;
-                }
-                if (PStarE >= (1 - theta))
-                {
-                    PE = 0;
-                }
-            }
-            else if (theta < 0.5)
-            {
-                if (PStarE <= (1 - theta))
-                {
-                    PE = 0;
-                }
-                if (PStarE <= theta)
-                {
-                    PE = 1;
-                }
-            }
-            magnitudeOfS = PE * (double)NumberOfItemsInOriginalDataset;
-
             //If full set, then no need to break it down
-            if(outputs.Length == (double)NumberOfItemsInOriginalDataset)
+            if (outputs.Length == (double)NumberOfItemsInOriginalDataset)
             {
                 magnitudeOfS = (double)NumberOfItemsInOriginalDataset;
             }
+            else
+            {
+                //if (theta > 0.5)
+                //{
+                //    if (PStarE >= theta)
+                //    {
+                //        PE = 1;
+                //    }
+                //    else if (PStarE >= (1 - theta))
+                //    {
+                //        PE = 0;
+                //    }
+                //    else if ((1 - theta) < PStarE && PStarE < theta)
+                //    {
+                //        PE = PE;
+                //    }
+                //    else
+                //    {
+                //        throw new Exception("PStar out of range?");
+                //    }
+                //}
+                //else if (theta < 0.5)
+                //{
+                //    if (PStarE <= (1 - theta))
+                //    {
+                //        PE = 0;
+                //    }
+                //    else if (PStarE <= theta)
+                //    {
+                //        PE = 1;
+                //    }
+                //    else if (theta < PStarE && PStarE < (1 - theta))
+                //    {
+                //        PE = PE;
+                //    }
+                //    else
+                //    {
+                //        throw new Exception("PStar out of range?");
+                //    }
+                //}
+                magnitudeOfS = PE * (double)NumberOfItemsInOriginalDataset;
+            }
+            
 
             int numberOfElementsWithAttribute0 = 0;
             int numberOfElementsWithAttribute1 = 0;
@@ -280,53 +299,85 @@ namespace CS_7850_RR_Classifier
             double PE0 = topHalfOfPE0 / bottomHalf;
             double PE1 = topHalfOfPE1 / bottomHalf;
 
-            //Limit P*E(0)
-            if (theta > 0.5)
-            {
-                if (PStarE0 >= theta)
-                {
-                    PE0 = 1;
-                }
-                if (PStarE0 >= (1 - theta))
-                {
-                    PE0 = 0;
-                }
-            }
-            else if (theta < 0.5)
-            {
-                if (PStarE0 <= (1 - theta))
-                {
-                    PE0 = 0;
-                }
-                if (PStarE0 <= theta)
-                {
-                    PE0 = 1;
-                }
-            }
+            ////Limit P*E(0)
+            //if (theta > 0.5)
+            //{
+            //    if (PStarE0 >= theta)
+            //    {
+            //        PE0 = 1;
+            //    }
+            //    else if (PStarE0 >= (1 - theta))
+            //    {
+            //        PE0 = 0;
+            //    }
+            //    else if ((1 - theta) < PStarE0 && PStarE0 < theta)
+            //    {
+            //        PE0 = PE0;
+            //    }
+            //    else
+            //    {
+            //        throw new Exception("PStar out of range?");
+            //    }
+            //}
+            //else if (theta < 0.5)
+            //{
+            //    if (PStarE0 <= (1 - theta))
+            //    {
+            //        PE0 = 0;
+            //    }
+            //    else if (PStarE0 <= theta)
+            //    {
+            //        PE0 = 1;
+            //    }
+            //    else if (theta < PStarE0 && PStarE0 < (1 - theta))
+            //    {
+            //        PE0 = PE0;
+            //    }
+            //    else
+            //    {
+            //        throw new Exception("PStar out of range?");
+            //    }
+            //}
 
-            //Limit P*E(1)
-            if (theta > 0.5)
-            {
-                if (PStarE1 >= theta)
-                {
-                    PE1 = 1;
-                }
-                if (PStarE1 >= (1 - theta))
-                {
-                    PE1 = 0;
-                }
-            }
-            else if (theta < 0.5)
-            {
-                if (PStarE1 <= (1 - theta))
-                {
-                    PE1 = 0;
-                }
-                if (PStarE1 <= theta)
-                {
-                    PE1 = 1;
-                }
-            }
+            ////Limit P*E(1)
+            //if (theta > 0.5)
+            //{
+            //    if (PStarE1 >= theta)
+            //    {
+            //        PE1 = 1;
+            //    }
+            //    else if (PStarE1 >= (1 - theta))
+            //    {
+            //        PE1 = 1;
+            //    }
+            //    else if ((1 - theta) < PStarE1 && PStarE1 < theta)
+            //    {
+            //        PE1 = PE1;
+            //    }
+            //    else
+            //    {
+            //        throw new Exception("PStar out of range?");
+            //    }
+            //}
+            //else if (theta < 0.5)
+            //{
+            //    if (PStarE1 <= (1 - theta))
+            //    {
+            //        PE1 = 0;
+            //    }
+            //    else if (PStarE1 <= theta)
+            //    {
+            //        PE1 = 1;
+            //    }
+            //    else if (theta < PStarE1 && PStarE1 < (1 - theta))
+            //    {
+            //        PE1 = PE1;
+            //    }
+            //    else
+            //    {
+            //        throw new Exception("PStar out of range?");
+            //    }
+            //}
 
             //If elements in set are perfectly classified, entropy is 0
             if (PStarE0 == 0 || PStarE1 == 0)
@@ -335,8 +386,8 @@ namespace CS_7850_RR_Classifier
                 return entropy;
             }
 
-            double Q0 = ((double)PStarE0 * (double)NumberOfItemsInOriginalDataset) / (double)magnitudeOfS;
-            double Q1 = ((double)PStarE1 * (double)NumberOfItemsInOriginalDataset) / (double)magnitudeOfS;
+            double Q0 = ((double)PE0 * (double)NumberOfItemsInOriginalDataset) / (double)magnitudeOfS;
+            double Q1 = ((double)PE1 * (double)NumberOfItemsInOriginalDataset) / (double)magnitudeOfS;
 
 
             //Calculate entropy based on Q0 and Q1
@@ -356,34 +407,52 @@ namespace CS_7850_RR_Classifier
             topHalfOfPE = PStarE - (1 - theta);
             PE = topHalfOfPE / bottomHalf;
             //Magnitude of S = P(E) * n where n is the total number of items in the dataset and P(E) is calculated based on P*(E) and theta.
-            if (theta > 0.5)
-            {
-                if(PStarE >= theta)
-                {
-                    PE = 1;
-                }
-                if(PStarE >= (1 - theta))
-                {
-                    PE = 0;
-                }
-            }
-            else if(theta < 0.5)
-            {
-                if (PStarE <= (1 - theta))
-                {
-                    PE = 0;
-                }
-                if (PStarE <= theta)
-                {
-                    PE = 1;
-                }
-            }
-            magnitudeOfS = PE * (double)NumberOfItemsInOriginalDataset;
-
             //If full set, then no need to break it down
             if (outputs.Length == (double)NumberOfItemsInOriginalDataset)
             {
                 magnitudeOfS = (double)NumberOfItemsInOriginalDataset;
+            }
+            else
+            {
+                //if (theta > 0.5)
+                //{
+                //    if (PStarE >= theta)
+                //    {
+                //        PE = 1;
+                //    }
+                //    else if (PStarE >= (1 - theta))
+                //    {
+                //        PE = 0;
+                //    }
+                //    else if ((1 - theta) < PStarE && PStarE < theta)
+                //    {
+                //        PE = PE;
+                //    }
+                //    else
+                //    {
+                //        throw new Exception("PStar out of range?");
+                //    }
+                //}
+                //else if (theta < 0.5)
+                //{
+                //    if (PStarE <= (1 - theta))
+                //    {
+                //        PE = 0;
+                //    }
+                //    else if (PStarE <= theta)
+                //    {
+                //        PE = 1;
+                //    }
+                //    else if (theta < PStarE && PStarE < (1 - theta))
+                //    {
+                //        PE = PE;
+                //    }
+                //    else
+                //    {
+                //        throw new Exception("PStar out of range?");
+                //    }
+                //}
+                magnitudeOfS = PE * (double)NumberOfItemsInOriginalDataset;
             }
 
             //Magnitude of Sv = P(E)*n where E also divides based on the test attirbute (either elementsWith0 or elementsWith1, dependent on which is v)
@@ -425,52 +494,83 @@ namespace CS_7850_RR_Classifier
             double PE1 = topHalfOfPE1 / bottomHalf;
 
             //Limit P*E(0)
-            if (theta > 0.5)
-            {
-                if (PStarE0 >= theta)
-                {
-                    PE0 = 1;
-                }
-                if (PStarE0 >= (1 - theta))
-                {
-                    PE0 = 0;
-                }
-            }
-            else if (theta < 0.5)
-            {
-                if (PStarE0 <= (1 - theta))
-                {
-                    PE0 = 0;
-                }
-                if (PStarE0 <= theta)
-                {
-                    PE0 = 1;
-                }
-            }
+            //if (theta > 0.5)
+            //{
+            //    if (PStarE0 >= theta)
+            //    {
+            //        PE0 = 1;
+            //    }
+            //    else if (PStarE0 >= (1 - theta))
+            //    {
+            //        PE0 = 0;
+            //    }
+            //    else if((1 - theta) < PStarE0 && PStarE0 < theta)
+            //    {
+            //        PE0 = PE0;
+            //    }
+            //    else
+            //    {
+            //        throw new Exception("PStar out of range?");
+            //    }
+            //}
+            //else if (theta < 0.5)
+            //{
+            //    if (PStarE0 <= (1 - theta))
+            //    {
+            //        PE0 = 0;
+            //    }
+            //    else if (PStarE0 <= theta)
+            //    {
+            //        PE0 = 1;
+            //    }
+            //    else if (theta < PStarE0 && PStarE0 < (1 - theta))
+            //    {
+            //        PE0 = PE0;
+            //    }
+            //    else{
+            //        throw new Exception("PStar out of range?");
+            //    }
+            //}
 
             //Limit P*E(1)
-            if (theta > 0.5)
-            {
-                if (PStarE1 >= theta)
-                {
-                    PE1 = 1;
-                }
-                if (PStarE1 >= (1 - theta))
-                {
-                    PE1 = 0;
-                }
-            }
-            else if (theta < 0.5)
-            {
-                if (PStarE1 <= (1 - theta))
-                {
-                    PE1 = 0;
-                }
-                if (PStarE1 <= theta)
-                {
-                    PE1 = 1;
-                }
-            }
+            //if (theta > 0.5)
+            //{
+            //    if (PStarE1 >= theta)
+            //    {
+            //        PE1 = 1;
+            //    }
+            //    else if (PStarE1 >= (1 - theta))
+            //    {
+            //        PE1 = 1;
+            //    }
+            //    else if ((1 - theta) < PStarE1 && PStarE1 < theta)
+            //    {
+            //        PE1 = PE1;
+            //    }
+            //    else
+            //    {
+            //        throw new Exception("PStar out of range?");
+            //    }
+            //}
+            //else if (theta < 0.5)
+            //{
+            //    if (PStarE1 <= (1 - theta))
+            //    {
+            //        PE1 = 0;
+            //    }
+            //    else if (PStarE1 <= theta)
+            //    {
+            //        PE1 = 1;
+            //    }
+            //    else if (theta < PStarE1 && PStarE1 < (1 - theta))
+            //    {
+            //        PE1 = PE1;
+            //    }
+            //    else
+            //    {
+            //        throw new Exception("PStar out of range?");
+            //    }
+            //}
 
             double magnitudeOfS0 = PE0 * (double)NumberOfItemsInOriginalDataset;
             double magnitudeOfS1 = PE1 * (double)NumberOfItemsInOriginalDataset;

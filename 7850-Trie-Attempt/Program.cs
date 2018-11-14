@@ -96,7 +96,7 @@ namespace CS_7850_RR_Classifier
             double varianceFor09 = Accord.Statistics.Measures.Variance(accuracyFor09);
             double varianceFor10 = Accord.Statistics.Measures.Variance(accuracyFor10);
             Dictionary<double, double> variances = new Dictionary<double, double>();
-            variances.Add(0, varianceFor0);
+           // variances.Add(0, varianceFor0);
             variances.Add(0.1, varianceFor01);
             variances.Add(0.2, varianceFor02);
             variances.Add(0.3, varianceFor03);
@@ -330,6 +330,7 @@ namespace CS_7850_RR_Classifier
                     var capitalGain = row["CapitalGain"];
                     var capitalLoss = row["CapitalLoss"];
                     var hoursPerWeek = row["HoursPerWeek"];
+                    var salary = row["SalaryLabel"];
                     //dataset.Columns.Add("SalaryLabel");
                     //int newSalary = 0;   
                     int newAge = 0;
@@ -339,6 +340,7 @@ namespace CS_7850_RR_Classifier
                     int newCapitalGain = 0;
                     int newCapitalLoss = 0;
                     int newHoursPerWeek = 0;
+                    int newSalary = 0;
 
                     //Flip salary
                     if (Convert.ToInt32(age) == 0)
@@ -369,6 +371,10 @@ namespace CS_7850_RR_Classifier
                     {
                         newHoursPerWeek = 1;
                     }
+                    if (Convert.ToInt32(salary) == 0)
+                    {
+                        newSalary = 1;
+                    }
                     //Insert flipped attributes into datatable.
                     //row["Salary"] = newSalary;
                     row["Age"] = newAge;
@@ -378,11 +384,87 @@ namespace CS_7850_RR_Classifier
                     row["CapitalGain"] = newCapitalGain;
                     row["CapitalLoss"] = newCapitalLoss;
                     row["HoursPerWeek"] = newHoursPerWeek;
+                    row["SalaryLabel"] = newSalary;
                 }
 
             }
 
             return randomizedDataset;
+        }
+
+        public static DataTable negateInputs(DataTable tableToNegate)
+        {
+            DataTable negatedTable = new DataTable("Negated Dataset");
+            negatedTable = tableToNegate.Copy();
+            //Iterate through all rows of datatable
+            foreach (DataRow row in negatedTable.Rows)
+            {
+                //Get current row's salary response
+                var age = row["Age"];
+                var finalWeight = row["FinalWeight"];
+                var educationNum = row["EducationNum"];
+                var sex = row["Sex"];
+                var capitalGain = row["CapitalGain"];
+                var capitalLoss = row["CapitalLoss"];
+                var hoursPerWeek = row["HoursPerWeek"];
+                var salary = row["SalaryLabel"];
+                //dataset.Columns.Add("SalaryLabel");
+                //int newSalary = 0;   
+                int newAge = 0;
+                int newFinalWeight = 0;
+                int newEducationNum = 0;
+                int newSex = 0;
+                int newCapitalGain = 0;
+                int newCapitalLoss = 0;
+                int newHoursPerWeek = 0;
+                int newSalary = 0;
+
+                //Flip salary
+                if (Convert.ToInt32(age) == 0)
+                {
+                    newAge = 1;
+                }
+                if (Convert.ToInt32(finalWeight) == 0)
+                {
+                    newFinalWeight = 1;
+                }
+                if (Convert.ToInt32(educationNum) == 0)
+                {
+                    newEducationNum = 1;
+                }
+                if (Convert.ToInt32(sex) == 0)
+                {
+                    newSex = 1;
+                }
+                if (Convert.ToInt32(capitalGain) == 0)
+                {
+                    newCapitalGain = 1;
+                }
+                if (Convert.ToInt32(capitalLoss) == 0)
+                {
+                    newCapitalLoss = 1;
+                }
+                if (Convert.ToInt32(hoursPerWeek) == 0)
+                {
+                    newHoursPerWeek = 1;
+                }
+                if (Convert.ToInt32(salary) == 0)
+                {
+                    newSalary = 1;
+                }
+                //Insert flipped attributes into datatable.
+                //row["Salary"] = newSalary;
+                row["Age"] = newAge;
+                row["FinalWeight"] = newFinalWeight;
+                row["EducationNum"] = newEducationNum;
+                row["Sex"] = newSex;
+                row["CapitalGain"] = newCapitalGain;
+                row["CapitalLoss"] = newCapitalLoss;
+                row["HoursPerWeek"] = newHoursPerWeek;
+                row["SalaryLabel"] = newSalary;
+            }
+
+            return negatedTable;
         }
 
         public static double IncomeDecision(DataTable incomeTrainingDataset, DataTable incomeTestingDataset)
@@ -437,8 +519,20 @@ namespace CS_7850_RR_Classifier
             int[][] trainingInputs = incomeTrainingDataset.ToJagged<int>("Age", "FinalWeight", "EducationNum", "Sex", "CapitalGain", "CapitalLoss", "HoursPerWeek");
             int[] trainingOutputs = incomeTrainingDataset.ToJagged<int>("SalaryLabel").GetColumn(0);
 
+
+            double numberOfElementsWithAttribute0 = 0;
+            //Count number of instances of 0 in dataset
+            for (int i = 0; i < trainingOutputs.Length; i++)
+            {
+                if (trainingOutputs[i] == 0)
+                {
+                    numberOfElementsWithAttribute0++;
+                }
+            }
+
             //Build tree from learning
             ModifiedTrie id3Trie = new ModifiedTrie(trainingInputs, trainingOutputs, trainingOutputs.Length, theta);
+            
 
             //Get arrays for testing inputs and outputs
             int[][] testingInputs = incomeTestingDataset.ToJagged<int>("Age", "FinalWeight", "EducationNum", "Sex", "CapitalGain", "CapitalLoss", "HoursPerWeek");
@@ -446,6 +540,12 @@ namespace CS_7850_RR_Classifier
 
             //Run classifier on testing inputs and get classified outputs
             int[] treeTestingOutputs = id3Trie.Decide(testingInputs);
+
+            DataTable complementTestingDataset = negateInputs(incomeTestingDataset);
+            int[][] complementTestingInputs = complementTestingDataset.ToJagged<int>("Age", "FinalWeight", "EducationNum", "Sex", "CapitalGain", "CapitalLoss", "HoursPerWeek");
+            int[] complementTestingOutputs = complementTestingDataset.ToJagged<int>("SalaryLabel").GetColumn(0);
+
+            int[] treeTestingComplementOutputs = id3Trie.Decide(complementTestingInputs);
 
             //ScatterplotBox.Show();
             //ScatterplotBox.Show("Expected vs. Real", testingOutputs, treeTestingOutputs);
@@ -473,6 +573,27 @@ namespace CS_7850_RR_Classifier
                 totalOutputs++;
             }
 
+            //double totalComplementCorrectOutputs = 0;
+            //for (int i = 0; i < complementTestingOutputs.Length; i++)
+            //{
+            //    if (complementTestingOutputs[i] == treeTestingComplementOutputs[i])
+            //    {
+            //        totalComplementCorrectOutputs++;
+            //    }
+            //    //If -1 is in any outputs, something went wrong.  This shouldn't be reached - it's for debugging.
+            //    if (treeTestingComplementOutputs[i] == -1)
+            //    {
+            //        return -1;
+            //    }
+            //}
+
+            //double ratioCorrect = totalCorrectOutputs / totalOutputs;
+            //double ratioComplementCorrect = totalComplementCorrectOutputs / totalOutputs;
+
+            //double realAccuracyTop = ratioCorrect + (ratioComplementCorrect * (1 - theta));
+            //double realAccuracyBottom = 1 - (2 * theta);
+
+            //double accuracy = realAccuracyTop / realAccuracyBottom;
             double accuracy = totalCorrectOutputs / totalOutputs;
             return accuracy;
         }
@@ -481,11 +602,11 @@ namespace CS_7850_RR_Classifier
         {
             List<double> accuracyMeasurements = new List<double>();
 
-            DataTable randomizedIncomeTrainingDataset = RandomizeIncomeDataset(incomeTrainingDataset, 0, theta);
             //DataTable randomizedIncomeTestingDataset = RandomizeIncomeDataset(incomeTestingDataset, 1, theta);
 
             for (int i = 0; i < 50; i++)
             {
+                DataTable randomizedIncomeTrainingDataset = RandomizeIncomeDataset(incomeTrainingDataset, 0, theta);
                 double randomizedIncomeAccuracy = ModifiedIncomeDecision(randomizedIncomeTrainingDataset, incomeTestingDataset, theta);
                 accuracyMeasurements.Add(randomizedIncomeAccuracy);
             }
