@@ -10,7 +10,7 @@ namespace CS_7850_RR_Classifier
     //Basic Trie code taken and heavily modified from
     //https://stackoverflow.com/questions/6416050/how-to-create-a-trie-in-c-sharp
 
-    public class Trie
+    public class ModifiedTrie
     {
         public class Node
         {
@@ -22,7 +22,11 @@ namespace CS_7850_RR_Classifier
 
             //expressionE is a Dictionary used to set up the attribute expression as described in the paper - the first int is the attribute number and the second int is the value
             //, Dictionary<int, int> expressionE
-            public Node(int[][] inputs, int[] outputs, int[] attributes, int height, int majorityClassOfParentNode)
+
+            //P*(E) is the number of elements in outputs (as the tree goes down the edges, outputs shrinks; the number of items in outputs is equivalent 
+            //to P*(E) where E is the attributes as given so far.
+
+            public Node(int[][] inputs, int[] outputs, int[] attributes, int height, int majorityClassOfParentNode, double theta)
             {
                 //If outputs is empty, set the class to be the majority class of the parent node
                 if (outputs.Length == 0) {
@@ -66,7 +70,7 @@ namespace CS_7850_RR_Classifier
                         {
                             double maxInfoGain = 0;
                             int maxInfoGainAttribute = 0;
-                            double entropyOfSet = Entropy(outputs);
+                            double entropyOfSet = Entropy(outputs, theta);
 
                             //4. Select test attribute with highest information gain.
 
@@ -74,7 +78,7 @@ namespace CS_7850_RR_Classifier
                             for (int i = 0; i < attributes.Length; i++)
                             {
                                 //Calculate information gain on each attribute
-                                double attributeInfoGain = CalculateInformationGain(inputs, outputs, attributes[i], entropyOfSet);
+                                double attributeInfoGain = CalculateInformationGain(inputs, outputs, attributes[i], entropyOfSet, theta);
                                 //If info gain is greater than the current max, set new max info gain and associated attribute
                                 if(i == 0)
                                 {
@@ -145,8 +149,8 @@ namespace CS_7850_RR_Classifier
                             int majorityClassOfS = Accord.Statistics.Measures.Mode(outputs);
 
                             //Create node for attribute 0
-                            Node attribute0Node = new Node(inputSubsetAttribute0Array, outputSubsetAttribute0Array, newAttributes, height++, majorityClassOfS);
-                            Node attribute1Node = new Node(inputSubsetAttribute1Array, outputSubsetAttribute1Array, newAttributes, height++, majorityClassOfS);
+                            Node attribute0Node = new Node(inputSubsetAttribute0Array, outputSubsetAttribute0Array, newAttributes, height++, majorityClassOfS, theta);
+                            Node attribute1Node = new Node(inputSubsetAttribute1Array, outputSubsetAttribute1Array, newAttributes, height++, majorityClassOfS, theta);
 
                             //Connect nodes by an edge
                             Edges.Add(0, attribute0Node);
@@ -158,22 +162,20 @@ namespace CS_7850_RR_Classifier
         }
 
         public Node Root;
+        public static int NumberOfItemsInOriginalDataset;
 
-        public Trie(int[][] inputs, int[] outputs, int totalSetSize)
+        public ModifiedTrie(int[][] inputs, int[] outputs, int totalSetSize, double theta)
         {
-            int attributeCount = 0;
             List<int> attributes = new List<int>();
-            //attributeCount = inputs[i].Length;
-                //attributes = new int[attributeCount];
-            //number of attributes == length of any input[]
+
             for (int j = 0; j < inputs[0].Length; j++)
             {
                 attributes.Add(j);
             }
             int[] attributesArray = attributes.ToArray<int>();
             int majorityClassOfS = Accord.Statistics.Measures.Mode(outputs);
-
-            Root = new Node(inputs, outputs, attributesArray, 0, majorityClassOfS);
+            NumberOfItemsInOriginalDataset = outputs.Length;
+            Root = new Node(inputs, outputs, attributesArray, 0, majorityClassOfS, theta);
         }
 
         public int[] Decide(int[][] inputs)
@@ -216,10 +218,46 @@ namespace CS_7850_RR_Classifier
             return -1;
         }
 
-        public static double Entropy(int[] outputs)
+        public static double Entropy(int[] outputs, double theta)
         {
-            int numberOfElements0 = 0;
-            int numberOfElements1 = 0;
+            double bottomHalf = (2 * theta) - 1;
+            double magnitudeOfS, PStarE, topHalfOfPE, PE;
+            PStarE = outputs.Length / (double)NumberOfItemsInOriginalDataset;
+            topHalfOfPE = PStarE - (1 - theta);
+            PE = topHalfOfPE / bottomHalf;
+            //Magnitude of S = P(E) * n where n is the total number of items in the dataset and P(E) is calculated based on P*(E) and theta.
+            if (theta > 0.5)
+            {
+                if (PStarE >= theta)
+                {
+                    PE = 1;
+                }
+                if (PStarE >= (1 - theta))
+                {
+                    PE = 0;
+                }
+            }
+            else if (theta < 0.5)
+            {
+                if (PStarE <= (1 - theta))
+                {
+                    PE = 0;
+                }
+                if (PStarE <= theta)
+                {
+                    PE = 1;
+                }
+            }
+            magnitudeOfS = PE * (double)NumberOfItemsInOriginalDataset;
+
+            //If full set, then no need to break it down
+            if(outputs.Length == (double)NumberOfItemsInOriginalDataset)
+            {
+                magnitudeOfS = (double)NumberOfItemsInOriginalDataset;
+            }
+
+            int numberOfElementsWithAttribute0 = 0;
+            int numberOfElementsWithAttribute1 = 0;
             double entropy = 0;
 
             //Count number of instances of 0 in dataset
@@ -227,21 +265,78 @@ namespace CS_7850_RR_Classifier
             {
                 if(outputs[i] == 0)
                 {
-                    numberOfElements0++;
+                    numberOfElementsWithAttribute0++;
                 }
             }
             //All class labels that aren't 0 are 1
-            numberOfElements1 = outputs.Length - numberOfElements0;
+            numberOfElementsWithAttribute1 = outputs.Length - numberOfElementsWithAttribute0;
+
+            double PStarE0 = numberOfElementsWithAttribute0 / (double)NumberOfItemsInOriginalDataset;
+            double PStarE1 = numberOfElementsWithAttribute1 / (double)NumberOfItemsInOriginalDataset;
+
+            double topHalfOfPE0 = PStarE0 - (1 - theta);
+            double topHalfOfPE1 = PStarE1 - (1 - theta);
+
+            double PE0 = topHalfOfPE0 / bottomHalf;
+            double PE1 = topHalfOfPE1 / bottomHalf;
+
+            //Limit P*E(0)
+            if (theta > 0.5)
+            {
+                if (PStarE0 >= theta)
+                {
+                    PE0 = 1;
+                }
+                if (PStarE0 >= (1 - theta))
+                {
+                    PE0 = 0;
+                }
+            }
+            else if (theta < 0.5)
+            {
+                if (PStarE0 <= (1 - theta))
+                {
+                    PE0 = 0;
+                }
+                if (PStarE0 <= theta)
+                {
+                    PE0 = 1;
+                }
+            }
+
+            //Limit P*E(1)
+            if (theta > 0.5)
+            {
+                if (PStarE1 >= theta)
+                {
+                    PE1 = 1;
+                }
+                if (PStarE1 >= (1 - theta))
+                {
+                    PE1 = 0;
+                }
+            }
+            else if (theta < 0.5)
+            {
+                if (PStarE1 <= (1 - theta))
+                {
+                    PE1 = 0;
+                }
+                if (PStarE1 <= theta)
+                {
+                    PE1 = 1;
+                }
+            }
 
             //If elements in set are perfectly classified, entropy is 0
-            if (numberOfElements0 == 0 || numberOfElements1 == 0)
+            if (PStarE0 == 0 || PStarE1 == 0)
             {
                 entropy = 0;
                 return entropy;
             }
 
-            double Q0 = (double)numberOfElements0 / (double)outputs.Length;
-            double Q1 = (double)numberOfElements1 / (double)outputs.Length;
+            double Q0 = ((double)PStarE0 * (double)NumberOfItemsInOriginalDataset) / (double)magnitudeOfS;
+            double Q1 = ((double)PStarE1 * (double)NumberOfItemsInOriginalDataset) / (double)magnitudeOfS;
 
 
             //Calculate entropy based on Q0 and Q1
@@ -251,15 +346,52 @@ namespace CS_7850_RR_Classifier
             return entropy;
         }
 
-        public static double CalculateInformationGain(int[][] inputs, int[] outputs, int attributeToCheck, double entropyOfSet)
+        //P*(E) is the number of elements in outputs or inputs (as the tree goes down the edges, outputs shrinks; the number of items in outputs/inputs is equivalent 
+        //to P*(E) where E is the attributes as given so far).
+        public static double CalculateInformationGain(int[][] inputs, int[] outputs, int attributeToCheck, double entropyOfSet, double theta)
         {
-            //Magnitude of S = inputs.length
-            //Magnitude of Sv = either elementsWith0 or elementsWith1, dependent on which is v
+            double bottomHalf = (2 * theta) - 1;
+            double magnitudeOfS, PStarE, topHalfOfPE, PE;
+            PStarE = outputs.Length / (double)NumberOfItemsInOriginalDataset;
+            topHalfOfPE = PStarE - (1 - theta);
+            PE = topHalfOfPE / bottomHalf;
+            //Magnitude of S = P(E) * n where n is the total number of items in the dataset and P(E) is calculated based on P*(E) and theta.
+            if (theta > 0.5)
+            {
+                if(PStarE >= theta)
+                {
+                    PE = 1;
+                }
+                if(PStarE >= (1 - theta))
+                {
+                    PE = 0;
+                }
+            }
+            else if(theta < 0.5)
+            {
+                if (PStarE <= (1 - theta))
+                {
+                    PE = 0;
+                }
+                if (PStarE <= theta)
+                {
+                    PE = 1;
+                }
+            }
+            magnitudeOfS = PE * (double)NumberOfItemsInOriginalDataset;
+
+            //If full set, then no need to break it down
+            if (outputs.Length == (double)NumberOfItemsInOriginalDataset)
+            {
+                magnitudeOfS = (double)NumberOfItemsInOriginalDataset;
+            }
+
+            //Magnitude of Sv = P(E)*n where E also divides based on the test attirbute (either elementsWith0 or elementsWith1, dependent on which is v)
 
             List<int> outputSubsetAttribute0 = new List<int>();
             List<int> outputSubsetAttribute1 = new List<int>();
-            int elementsWithAttribute0 = 0;
-            int elementsWithAttribute1 = 0;
+            int numberOfElementsWithAttribute0 = 0;
+            int numberOfElementsWithAttribute1 = 0;
             double entropyOfAttributes0 = 0;
             double entropyOfAttributes1 = 0;
             
@@ -269,12 +401,12 @@ namespace CS_7850_RR_Classifier
                 
                 if (inputs[j][attributeToCheck] == 0)
                 {
-                    elementsWithAttribute0++;
+                    numberOfElementsWithAttribute0++;
                     outputSubsetAttribute0.Add(outputs[j]);
                 }
                 else
                 {
-                    elementsWithAttribute1++;
+                    numberOfElementsWithAttribute1++;
                     outputSubsetAttribute1.Add(outputs[j]);
                 }
             }
@@ -282,13 +414,75 @@ namespace CS_7850_RR_Classifier
             //Make array of outputs for which attribute value is one or the other
             int[] outputSubsetAttribute0Array = outputSubsetAttribute0.ToArray<int>();
             int[] outputSubsetAttribute1Array = outputSubsetAttribute1.ToArray<int>();
+
+            double PStarE0 = numberOfElementsWithAttribute0 / (double)NumberOfItemsInOriginalDataset;
+            double PStarE1 = numberOfElementsWithAttribute1 / (double)NumberOfItemsInOriginalDataset;
+
+            double topHalfOfPE0 = PStarE0 - (1 - theta);
+            double topHalfOfPE1 = PStarE1 - (1 - theta);
+
+            double PE0 = topHalfOfPE0 / bottomHalf;
+            double PE1 = topHalfOfPE1 / bottomHalf;
+
+            //Limit P*E(0)
+            if (theta > 0.5)
+            {
+                if (PStarE0 >= theta)
+                {
+                    PE0 = 1;
+                }
+                if (PStarE0 >= (1 - theta))
+                {
+                    PE0 = 0;
+                }
+            }
+            else if (theta < 0.5)
+            {
+                if (PStarE0 <= (1 - theta))
+                {
+                    PE0 = 0;
+                }
+                if (PStarE0 <= theta)
+                {
+                    PE0 = 1;
+                }
+            }
+
+            //Limit P*E(1)
+            if (theta > 0.5)
+            {
+                if (PStarE1 >= theta)
+                {
+                    PE1 = 1;
+                }
+                if (PStarE1 >= (1 - theta))
+                {
+                    PE1 = 0;
+                }
+            }
+            else if (theta < 0.5)
+            {
+                if (PStarE1 <= (1 - theta))
+                {
+                    PE1 = 0;
+                }
+                if (PStarE1 <= theta)
+                {
+                    PE1 = 1;
+                }
+            }
+
+            double magnitudeOfS0 = PE0 * (double)NumberOfItemsInOriginalDataset;
+            double magnitudeOfS1 = PE1 * (double)NumberOfItemsInOriginalDataset;
+
+
             //Get Entropy(Sv) for v = 0, 1
-            entropyOfAttributes0 = Entropy(outputSubsetAttribute0Array);
-            entropyOfAttributes1 = Entropy(outputSubsetAttribute1Array);
+            entropyOfAttributes0 = Entropy(outputSubsetAttribute0Array, theta);
+            entropyOfAttributes1 = Entropy(outputSubsetAttribute1Array, theta);
             
             //Build out elements of summation for infoGain calculation
-            double attribute0SumElement = ((double)elementsWithAttribute0 / (double)inputs.Length) * entropyOfAttributes0;
-            double attribute1SumElement = ((double)elementsWithAttribute1 / (double)inputs.Length) * entropyOfAttributes1;
+            double attribute0SumElement = ((double)magnitudeOfS0 / (double)magnitudeOfS) * entropyOfAttributes0;
+            double attribute1SumElement = ((double)magnitudeOfS1 / (double)magnitudeOfS) * entropyOfAttributes1;
 
             //Get value of summation for infoGain
             double summation = attribute0SumElement + attribute1SumElement;
@@ -297,11 +491,5 @@ namespace CS_7850_RR_Classifier
             double infoGain = entropyOfSet - summation;
             return infoGain;
         }
-
-        //public static double AttributeEntropy(int[] outputs)
-        //{
-
-        //    return 1.0;
-        //}
     }
 }

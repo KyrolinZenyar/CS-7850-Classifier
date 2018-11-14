@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28010.2003
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "7850-Trie-Attempt", "7850-Trie-Attempt\7850-Trie-Attempt.csproj", "{D3EBA9A5-04A3-4700-BF8A-0F86813CFE95}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CS-7850-RR-Classifier", "7850-Trie-Attempt\CS-7850-RR-Classifier.csproj", "{D3EBA9A5-04A3-4700-BF8A-0F86813CFE95}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
