@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28010.2003
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CS-7850-Classifier", "CS-7850-Classifier\CS-7850-Classifier.csproj", "{30852B00-525F-4FE7-AF74-D3DD52FE9844}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "7850-Trie-Attempt", "7850-Trie-Attempt\7850-Trie-Attempt.csproj", "{D3EBA9A5-04A3-4700-BF8A-0F86813CFE95}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +11,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{30852B00-525F-4FE7-AF74-D3DD52FE9844}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{30852B00-525F-4FE7-AF74-D3DD52FE9844}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{30852B00-525F-4FE7-AF74-D3DD52FE9844}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{30852B00-525F-4FE7-AF74-D3DD52FE9844}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3EBA9A5-04A3-4700-BF8A-0F86813CFE95}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3EBA9A5-04A3-4700-BF8A-0F86813CFE95}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3EBA9A5-04A3-4700-BF8A-0F86813CFE95}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3EBA9A5-04A3-4700-BF8A-0F86813CFE95}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {54FC1E39-0A40-4176-971D-B19DE0141EA1}
+		SolutionGuid = {CBD0912F-E6CE-49AD-A09E-F108E8BC8227}
 	EndGlobalSection
 EndGlobal

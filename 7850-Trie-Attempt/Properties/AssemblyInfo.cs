@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("CS-7850-Classifier")]
+[assembly: AssemblyTitle("7850-Trie-Attempt")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("CS-7850-Classifier")]
+[assembly: AssemblyProduct("7850-Trie-Attempt")]
 [assembly: AssemblyCopyright("Copyright ©  2018")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("30852b00-525f-4fe7-af74-d3dd52fe9844")]
+[assembly: Guid("d3eba9a5-04a3-4700-bf8a-0f86813cfe95")]
 
 // Version information for an assembly consists of the following four values:
 //
