@@ -27,7 +27,10 @@ namespace CS_7850_RR_Classifier
             DataTable incomeTestingDataset = LoadIncomeDataset(1);
             double benchmarkIncomeAccuracy = IncomeDecision(incomeTrainingDataset, incomeTestingDataset);
 
+            theta = 1.0;
+            double[] accuracyFor10 = testRandomization(incomeTrainingDataset, incomeTestingDataset, theta);
             //Get accuracy data
+            theta = 0;
             double[] accuracyFor0 = testRandomization(incomeTrainingDataset, incomeTestingDataset, theta);
             theta = 0.1;
             double[] accuracyFor01 = testRandomization(incomeTrainingDataset, incomeTestingDataset, theta);
@@ -51,8 +54,8 @@ namespace CS_7850_RR_Classifier
             double[] accuracyFor08 = testRandomization(incomeTrainingDataset, incomeTestingDataset, theta);
             theta = 0.9;
             double[] accuracyFor09 = testRandomization(incomeTrainingDataset, incomeTestingDataset, theta);
-            theta = 1.0;
-            double[] accuracyFor10 = testRandomization(incomeTrainingDataset, incomeTestingDataset, theta);
+            //theta = 1.0;
+            //double[] accuracyFor10 = testRandomization(incomeTrainingDataset, incomeTestingDataset, theta);
 
             double meanFor0 = Accord.Statistics.Measures.Mean(accuracyFor0);
             double meanFor01 = Accord.Statistics.Measures.Mean(accuracyFor01);
@@ -520,15 +523,15 @@ namespace CS_7850_RR_Classifier
             int[] trainingOutputs = incomeTrainingDataset.ToJagged<int>("SalaryLabel").GetColumn(0);
 
 
-            double numberOfElementsWithAttribute0 = 0;
-            //Count number of instances of 0 in dataset
-            for (int i = 0; i < trainingOutputs.Length; i++)
-            {
-                if (trainingOutputs[i] == 0)
-                {
-                    numberOfElementsWithAttribute0++;
-                }
-            }
+            //double numberOfElementsWithAttribute0 = 0;
+            ////Count number of instances of 0 in dataset
+            //for (int i = 0; i < trainingOutputs.Length; i++)
+            //{
+            //    if (trainingOutputs[i] == 0)
+            //    {
+            //        numberOfElementsWithAttribute0++;
+            //    }
+            //}
 
             //Build tree from learning
             ModifiedTrie id3Trie = new ModifiedTrie(trainingInputs, trainingOutputs, trainingOutputs.Length, theta);

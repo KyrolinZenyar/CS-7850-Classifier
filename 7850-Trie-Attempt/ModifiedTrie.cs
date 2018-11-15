@@ -259,51 +259,14 @@ namespace CS_7850_RR_Classifier
             for (int i = 0; i < fullInputs.Length; i++)
             {
                 int currentInput = 1;
+                int oppositeInput = 1;
                 foreach (KeyValuePair<int, int> keyPair in expressionE)
                 {
                 //Get current attribute and its value from E
                     int currentAttribute = keyPair.Key;
                     int currentValue = keyPair.Value;
-                //List<int[]> newInputs = new List<int[]>();
-                //List<int> newOutputs = new List<int>();
-                ////Iterate through all inputs - flag the indices where any key-value pair is false as 0
-                    if(fullInputs[i][currentAttribute] != currentValue)
-                    {
-                        currentInput = 0;
-                    }
-                }
+                    int oppositeValue = (keyPair.Value + 1) % 2;
 
-                if(currentInput == 1)
-                {
-                    PStarEIndexes[i] = 1;
-                }
-            }
-
-            double numberOfRows = 0;
-
-            //Count number of rows where trueIndexes is still true (Count P*(E))
-            for(int i = 0; i < PStarEIndexes.Length; i++)
-            {
-                if(PStarEIndexes[i] == 1)
-                {
-                    numberOfRows++;
-                }
-                
-            }
-
-            //Get P*(E) as a ratio
-            PStarE = numberOfRows / (double)NumberOfItemsInOriginalDataset;
-
-            //Build P*(E) based on E by building iterating through all key pairs of expressionE and whittling down from overall dataset
-            for (int i = 0; i < fullInputs.Length; i++)
-            {
-                int currentInput = 1;
-                foreach (KeyValuePair<int, int> keyPair in expressionE)
-                {
-                    //Get current attribute and its value from E
-                    int currentAttribute = keyPair.Key;
-                    //Add 1 and mod by 2 - this will flip the value (0 + 1 % 2 = 1, 1 + 1 % 2 = 0)
-                    int currentValue = (keyPair.Value + 1) % 2;
                     //List<int[]> newInputs = new List<int[]>();
                     //List<int> newOutputs = new List<int>();
                     ////Iterate through all inputs - flag the indices where any key-value pair is false as 0
@@ -311,25 +274,78 @@ namespace CS_7850_RR_Classifier
                     {
                         currentInput = 0;
                     }
+
+                    if (fullInputs[i][currentAttribute] != oppositeValue)
+                    {
+                        oppositeInput = 0;
+                    }
+                }
+
+                if (oppositeInput== 1)
+                {
+                    PStarEBarIndexes[i] = 1;
                 }
 
                 if (currentInput == 1)
                 {
-                    PStarEBarIndexes[i] = 1;
+                    PStarEIndexes[i] = 1;
                 }
             }
 
+            double numberOfRows = 0;
             double numberOfEBarRows = 0;
 
             //Count number of rows where trueIndexes is still true (Count P*(E))
-            for (int i = 0; i < PStarEBarIndexes.Length; i++)
+            for (int i = 0; i < PStarEIndexes.Length; i++)
             {
+                if(PStarEIndexes[i] == 1)
+                {
+                    numberOfRows++;
+                }
                 if (PStarEBarIndexes[i] == 1)
                 {
                     numberOfEBarRows++;
                 }
-
             }
+
+            //Get P*(E) as a ratio
+            PStarE = numberOfRows / (double)NumberOfItemsInOriginalDataset;
+
+            ////Build P*(E) based on E by building iterating through all key pairs of expressionE and whittling down from overall dataset
+            //for (int i = 0; i < fullInputs.Length; i++)
+            //{
+            //    int currentInput = 1;
+            //    foreach (KeyValuePair<int, int> keyPair in expressionE)
+            //    {
+            //        //Get current attribute and its value from E
+            //        int currentAttribute = keyPair.Key;
+            //        //Add 1 and mod by 2 - this will flip the value (0 + 1 % 2 = 1, 1 + 1 % 2 = 0)
+            //        int currentValue = (keyPair.Value + 1) % 2;
+            //        //List<int[]> newInputs = new List<int[]>();
+            //        //List<int> newOutputs = new List<int>();
+            //        ////Iterate through all inputs - flag the indices where any key-value pair is false as 0
+            //        if (fullInputs[i][currentAttribute] != currentValue)
+            //        {
+            //            currentInput = 0;
+            //        }
+            //    }
+
+            //    if (currentInput == 1)
+            //    {
+            //        PStarEBarIndexes[i] = 1;
+            //    }
+            //}
+
+
+            //Count number of rows where trueIndexes is still true (Count P*(E))
+            //for (int i = 0; i < PStarEBarIndexes.Length; i++)
+            //{
+            //    if (PStarEBarIndexes[i] == 1)
+            //    {
+            //        numberOfEBarRows++;
+            //    }
+
+            //}
 
             //Get P*(E) as a ratio
             PStarEBar = numberOfEBarRows / (double)NumberOfItemsInOriginalDataset;
@@ -355,6 +371,7 @@ namespace CS_7850_RR_Classifier
             // int[] Q0trueIndexes = new int[trueIndexes.Length];
 
             double Q0numberOfRows = 0;
+            double EBarQ0numberOfRows = 0;
 
             //Count number of rows where trueIndexes is still true (Count P*(E))
             for (int i = 0; i < PStarEIndexes.Length; i++)
@@ -363,23 +380,26 @@ namespace CS_7850_RR_Classifier
                 {
                     Q0numberOfRows++;
                 }
-
-            }
-
-            //Get P*(E) for Q0 as a ratio
-            PStarEQ0 = Q0numberOfRows / (double)NumberOfItemsInOriginalDataset;
-
-            double EBarQ0numberOfRows = 0;
-
-            //Count number of rows where trueIndexes is still true (Count P*(E))
-            for (int i = 0; i < PStarEBarIndexes.Length; i++)
-            {
                 if (PStarEBarIndexes[i] == 1 && fullOutputs[i] == 0)
                 {
                     EBarQ0numberOfRows++;
                 }
 
             }
+
+            //Get P*(E) for Q0 as a ratio
+            PStarEQ0 = Q0numberOfRows / (double)NumberOfItemsInOriginalDataset;
+
+
+            ////Count number of rows where trueIndexes is still true (Count P*(E))
+            //for (int i = 0; i < PStarEBarIndexes.Length; i++)
+            //{
+            //    if (PStarEBarIndexes[i] == 1 && fullOutputs[i] == 0)
+            //    {
+            //        EBarQ0numberOfRows++;
+            //    }
+
+            //}
 
             //Get P*(E) for Q0 as a ratio
             PStarEBarQ0 = EBarQ0numberOfRows / (double)NumberOfItemsInOriginalDataset;
