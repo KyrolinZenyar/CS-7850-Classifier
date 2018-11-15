@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Accord.Math;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -26,7 +27,7 @@ namespace CS_7850_RR_Classifier
             //P*(E) is the number of elements in outputs (as the tree goes down the edges, outputs shrinks; the number of items in outputs is equivalent 
             //to P*(E) where E is the attributes as given so far.
 
-            public Node(int[][] inputs, int[] outputs, int[] attributes, int height, int majorityClassOfParentNode, double theta)
+            public Node(int[][] inputs, int[] outputs, int[] attributes, int height, int majorityClassOfParentNode, double theta, Dictionary<int, int> expressionE)
             {
                 //If outputs is empty, set the class to be the majority class of the parent node
                 if (outputs.Length == 0) {
@@ -70,7 +71,8 @@ namespace CS_7850_RR_Classifier
                         {
                             double maxInfoGain = 0;
                             int maxInfoGainAttribute = 0;
-                            double entropyOfSet = Entropy(outputs, theta);
+                            //outputs, 
+                            double entropyOfSet = Entropy(theta, expressionE);
 
                             //4. Select test attribute with highest information gain.
 
@@ -78,7 +80,7 @@ namespace CS_7850_RR_Classifier
                             for (int i = 0; i < attributes.Length; i++)
                             {
                                 //Calculate information gain on each attribute
-                                double attributeInfoGain = CalculateInformationGain(inputs, outputs, attributes[i], entropyOfSet, theta);
+                                double attributeInfoGain = CalculateInformationGain(inputs, outputs, attributes[i], entropyOfSet, theta, expressionE);
                                 //If info gain is greater than the current max, set new max info gain and associated attribute
                                 if(i == 0)
                                 {
@@ -148,9 +150,22 @@ namespace CS_7850_RR_Classifier
 
                             int majorityClassOfS = Accord.Statistics.Measures.Mode(outputs);
 
+                            //Build out expression E defining node logic
+                            Dictionary<int, int> expressionE0 = new Dictionary<int, int>();
+                            Dictionary<int, int> expressionE1 = new Dictionary<int, int>();
+
+                            foreach (KeyValuePair<int, int> pair in expressionE)
+                            {
+                                expressionE0.Add(pair.Key, pair.Value);
+                                expressionE1.Add(pair.Key, pair.Value);
+                            }
+
+                            expressionE0.Add(maxInfoGainAttribute, 0);
+                            expressionE1.Add(maxInfoGainAttribute, 1);
+
                             //Create node for attribute 0
-                            Node attribute0Node = new Node(inputSubsetAttribute0Array, outputSubsetAttribute0Array, newAttributes, height++, majorityClassOfS, theta);
-                            Node attribute1Node = new Node(inputSubsetAttribute1Array, outputSubsetAttribute1Array, newAttributes, height++, majorityClassOfS, theta);
+                            Node attribute0Node = new Node(inputSubsetAttribute0Array, outputSubsetAttribute0Array, newAttributes, height++, majorityClassOfS, theta, expressionE0);
+                            Node attribute1Node = new Node(inputSubsetAttribute1Array, outputSubsetAttribute1Array, newAttributes, height++, majorityClassOfS, theta, expressionE1);
 
                             //Connect nodes by an edge
                             Edges.Add(0, attribute0Node);
@@ -163,6 +178,9 @@ namespace CS_7850_RR_Classifier
 
         public Node Root;
         public static int NumberOfItemsInOriginalDataset;
+        public static int[][] fullInputs;
+        public static int[] fullOutputs;
+
 
         public ModifiedTrie(int[][] inputs, int[] outputs, int totalSetSize, double theta)
         {
@@ -175,7 +193,10 @@ namespace CS_7850_RR_Classifier
             int[] attributesArray = attributes.ToArray<int>();
             int majorityClassOfS = Accord.Statistics.Measures.Mode(outputs);
             NumberOfItemsInOriginalDataset = outputs.Length;
-            Root = new Node(inputs, outputs, attributesArray, 0, majorityClassOfS, theta);
+            fullInputs = inputs;
+            fullOutputs = outputs;
+            Dictionary<int, int> expressionE = new Dictionary<int, int>();
+            Root = new Node(inputs, outputs, attributesArray, 0, majorityClassOfS, theta, expressionE);
         }
 
         public int[] Decide(int[][] inputs)
@@ -218,378 +239,210 @@ namespace CS_7850_RR_Classifier
             return -1;
         }
 
-        public static double Entropy(int[] outputs, double theta)
+        //int[] outputs,
+        public static double Entropy(double theta, Dictionary<int, int> expressionE)
         {
-            double bottomHalf = (2 * theta) - 1;
-            double magnitudeOfS, PStarE, topHalfOfPE, PE;
-            PStarE = outputs.Length / (double)NumberOfItemsInOriginalDataset;
-            topHalfOfPE = PStarE - (1 - theta);
-            PE = topHalfOfPE / bottomHalf;
-            //Magnitude of S = P(E) * n where n is the total number of items in the dataset and P(E) is calculated based on P*(E) and theta.
-            //If full set, then no need to break it down
-            if (outputs.Length == (double)NumberOfItemsInOriginalDataset)
-            {
-                magnitudeOfS = (double)NumberOfItemsInOriginalDataset;
-            }
-            else
-            {
-                //if (theta > 0.5)
-                //{
-                //    if (PStarE >= theta)
-                //    {
-                //        PE = 1;
-                //    }
-                //    else if (PStarE >= (1 - theta))
-                //    {
-                //        PE = 0;
-                //    }
-                //    else if ((1 - theta) < PStarE && PStarE < theta)
-                //    {
-                //        PE = PE;
-                //    }
-                //    else
-                //    {
-                //        throw new Exception("PStar out of range?");
-                //    }
-                //}
-                //else if (theta < 0.5)
-                //{
-                //    if (PStarE <= (1 - theta))
-                //    {
-                //        PE = 0;
-                //    }
-                //    else if (PStarE <= theta)
-                //    {
-                //        PE = 1;
-                //    }
-                //    else if (theta < PStarE && PStarE < (1 - theta))
-                //    {
-                //        PE = PE;
-                //    }
-                //    else
-                //    {
-                //        throw new Exception("PStar out of range?");
-                //    }
-                //}
-                magnitudeOfS = PE * (double)NumberOfItemsInOriginalDataset;
-            }
-            
-
-            int numberOfElementsWithAttribute0 = 0;
-            int numberOfElementsWithAttribute1 = 0;
             double entropy = 0;
-
-            //Count number of instances of 0 in dataset
-            for (int i = 0; i < outputs.Length; i++)
+            int[] trueIndexes = new int[fullInputs.Length];
+            for(int i = 0; i < fullInputs.Length; i++)
             {
-                if(outputs[i] == 0)
+                trueIndexes[i] = 0;
+            }
+            double PStarE;
+            //Build P*(E) based on E by building iterating through all key pairs of expressionE and whittling down from overall dataset
+            for (int i = 0; i < fullInputs.Length; i++)
+            {
+                int currentInput = 1;
+                foreach (KeyValuePair<int, int> keyPair in expressionE)
                 {
-                    numberOfElementsWithAttribute0++;
+                //Get current attribute and its value from E
+                    int currentAttribute = keyPair.Key;
+                    int currentValue = keyPair.Value;
+                //List<int[]> newInputs = new List<int[]>();
+                //List<int> newOutputs = new List<int>();
+                ////Iterate through all inputs - flag the indices where any key-value pair is false as 0
+                    if(fullInputs[i][currentAttribute] != currentValue)
+                    {
+                        currentInput = 0;
+                    }
                 }
+
+                if(currentInput == 1)
+                {
+                    trueIndexes[i] = 1;
+                }
+
             }
-            //All class labels that aren't 0 are 1
-            numberOfElementsWithAttribute1 = outputs.Length - numberOfElementsWithAttribute0;
 
-            double PStarE0 = numberOfElementsWithAttribute0 / (double)NumberOfItemsInOriginalDataset;
-            double PStarE1 = numberOfElementsWithAttribute1 / (double)NumberOfItemsInOriginalDataset;
+            double numberOfRows = 0;
 
-            double topHalfOfPE0 = PStarE0 - (1 - theta);
-            double topHalfOfPE1 = PStarE1 - (1 - theta);
-
-            double PE0 = topHalfOfPE0 / bottomHalf;
-            double PE1 = topHalfOfPE1 / bottomHalf;
-
-            ////Limit P*E(0)
-            //if (theta > 0.5)
-            //{
-            //    if (PStarE0 >= theta)
-            //    {
-            //        PE0 = 1;
-            //    }
-            //    else if (PStarE0 >= (1 - theta))
-            //    {
-            //        PE0 = 0;
-            //    }
-            //    else if ((1 - theta) < PStarE0 && PStarE0 < theta)
-            //    {
-            //        PE0 = PE0;
-            //    }
-            //    else
-            //    {
-            //        throw new Exception("PStar out of range?");
-            //    }
-            //}
-            //else if (theta < 0.5)
-            //{
-            //    if (PStarE0 <= (1 - theta))
-            //    {
-            //        PE0 = 0;
-            //    }
-            //    else if (PStarE0 <= theta)
-            //    {
-            //        PE0 = 1;
-            //    }
-            //    else if (theta < PStarE0 && PStarE0 < (1 - theta))
-            //    {
-            //        PE0 = PE0;
-            //    }
-            //    else
-            //    {
-            //        throw new Exception("PStar out of range?");
-            //    }
-            //}
-
-            ////Limit P*E(1)
-            //if (theta > 0.5)
-            //{
-            //    if (PStarE1 >= theta)
-            //    {
-            //        PE1 = 1;
-            //    }
-            //    else if (PStarE1 >= (1 - theta))
-            //    {
-            //        PE1 = 1;
-            //    }
-            //    else if ((1 - theta) < PStarE1 && PStarE1 < theta)
-            //    {
-            //        PE1 = PE1;
-            //    }
-            //    else
-            //    {
-            //        throw new Exception("PStar out of range?");
-            //    }
-            //}
-            //else if (theta < 0.5)
-            //{
-            //    if (PStarE1 <= (1 - theta))
-            //    {
-            //        PE1 = 0;
-            //    }
-            //    else if (PStarE1 <= theta)
-            //    {
-            //        PE1 = 1;
-            //    }
-            //    else if (theta < PStarE1 && PStarE1 < (1 - theta))
-            //    {
-            //        PE1 = PE1;
-            //    }
-            //    else
-            //    {
-            //        throw new Exception("PStar out of range?");
-            //    }
-            //}
-
-            //If elements in set are perfectly classified, entropy is 0
-            if (PStarE0 == 0 || PStarE1 == 0)
+            //Count number of rows where trueIndexes is still true (Count P*(E))
+            for(int i = 0; i < trueIndexes.Length; i++)
             {
-                entropy = 0;
-                return entropy;
+                if(trueIndexes[i] == 1)
+                {
+                    numberOfRows++;
+                }
+                
             }
 
-            double Q0 = ((double)PE0 * (double)NumberOfItemsInOriginalDataset) / (double)magnitudeOfS;
-            double Q1 = ((double)PE1 * (double)NumberOfItemsInOriginalDataset) / (double)magnitudeOfS;
+            //Get P*(E) as a ratio
+            PStarE = numberOfRows / (double)NumberOfItemsInOriginalDataset;
 
+            //Calculate P(E) and |S|
+            double PE = GetPE(PStarE, theta);
+            double magnitudeOfS = PE * (double)NumberOfItemsInOriginalDataset;
+
+
+            double PStarEQ0 = 0;
+
+            //Get P*(E) for Q0
+            //for (int i = 0; i < fullOutputs.Length; i++)
+            //{
+            //    if(fullOutputs[i] == 0 && trueIndexes[i] == 1)
+            //    {
+            //        PStarEQ0++;
+            //    }
+            //}
+
+           // int[] Q0trueIndexes = new int[trueIndexes.Length];
+
+            double Q0numberOfRows = 0;
+
+            //Count number of rows where trueIndexes is still true (Count P*(E))
+            for (int i = 0; i < trueIndexes.Length; i++)
+            {
+                if (trueIndexes[i] == 1 && fullOutputs[i] == 0)
+                {
+                    Q0numberOfRows++;
+                }
+
+            }
+
+            //Get P*(E) for Q0 as a ratio
+            PStarEQ0 = Q0numberOfRows / (double)NumberOfItemsInOriginalDataset;
+
+            //Get P(E) for Q0, then calculate Q0 and Q1.
+            double PEQ0 = GetPE(PStarEQ0, theta);
+
+            double Q0 = (PEQ0 * (double)NumberOfItemsInOriginalDataset) / magnitudeOfS;
+            double Q1 = 1 - Q0;
 
             //Calculate entropy based on Q0 and Q1
             entropy -= Q0 * Math.Log(Q0, 2);
             entropy -= Q1 * Math.Log(Q1, 2);
 
             return entropy;
+
+        }
+
+        //Method to get PE given a PStarE and theta
+        public static double GetPE(double PStarE, double theta)
+        {
+            if(PStarE == 1)
+            {
+                return 1;
+            }
+            double PETopHalf = PStarE - (1 - theta);
+            double PEBottomHalf = (2 * theta) - 1;
+            double PE = PETopHalf / PEBottomHalf;
+
+            return PE;
         }
 
         //P*(E) is the number of elements in outputs or inputs (as the tree goes down the edges, outputs shrinks; the number of items in outputs/inputs is equivalent 
         //to P*(E) where E is the attributes as given so far).
-        public static double CalculateInformationGain(int[][] inputs, int[] outputs, int attributeToCheck, double entropyOfSet, double theta)
+        public static double CalculateInformationGain(int[][] inputs, int[] outputs, int attributeToCheck, double entropyOfSet, double theta, Dictionary<int, int> expressionE)
         {
-            double bottomHalf = (2 * theta) - 1;
-            double magnitudeOfS, PStarE, topHalfOfPE, PE;
-            PStarE = outputs.Length / (double)NumberOfItemsInOriginalDataset;
-            topHalfOfPE = PStarE - (1 - theta);
-            PE = topHalfOfPE / bottomHalf;
-            //Magnitude of S = P(E) * n where n is the total number of items in the dataset and P(E) is calculated based on P*(E) and theta.
-            //If full set, then no need to break it down
-            if (outputs.Length == (double)NumberOfItemsInOriginalDataset)
+            //Information gain for a given attribute is defined as 
+            //Gain(S, A) = Entropy(S) - Sum v in a ((|Sv|/|S|)*Entropy(Sv)) where v is all possible values for A (in this case {0, 1}) and Sv is all elements is S where A has value v.
+
+            double magnitudeOfS = getMagnitudeOfS(expressionE, theta);
+
+            Dictionary<int, int> expressionE0 = new Dictionary<int, int>();
+            Dictionary<int, int> expressionE1 = new Dictionary<int, int>();
+
+            foreach (KeyValuePair<int, int> pair in expressionE)
             {
-                magnitudeOfS = (double)NumberOfItemsInOriginalDataset;
-            }
-            else
-            {
-                //if (theta > 0.5)
-                //{
-                //    if (PStarE >= theta)
-                //    {
-                //        PE = 1;
-                //    }
-                //    else if (PStarE >= (1 - theta))
-                //    {
-                //        PE = 0;
-                //    }
-                //    else if ((1 - theta) < PStarE && PStarE < theta)
-                //    {
-                //        PE = PE;
-                //    }
-                //    else
-                //    {
-                //        throw new Exception("PStar out of range?");
-                //    }
-                //}
-                //else if (theta < 0.5)
-                //{
-                //    if (PStarE <= (1 - theta))
-                //    {
-                //        PE = 0;
-                //    }
-                //    else if (PStarE <= theta)
-                //    {
-                //        PE = 1;
-                //    }
-                //    else if (theta < PStarE && PStarE < (1 - theta))
-                //    {
-                //        PE = PE;
-                //    }
-                //    else
-                //    {
-                //        throw new Exception("PStar out of range?");
-                //    }
-                //}
-                magnitudeOfS = PE * (double)NumberOfItemsInOriginalDataset;
+                expressionE0.Add(pair.Key, pair.Value);
+                expressionE1.Add(pair.Key, pair.Value);
             }
 
-            //Magnitude of Sv = P(E)*n where E also divides based on the test attirbute (either elementsWith0 or elementsWith1, dependent on which is v)
-
-            List<int> outputSubsetAttribute0 = new List<int>();
-            List<int> outputSubsetAttribute1 = new List<int>();
-            int numberOfElementsWithAttribute0 = 0;
-            int numberOfElementsWithAttribute1 = 0;
-            double entropyOfAttributes0 = 0;
-            double entropyOfAttributes1 = 0;
-            
-            //Count elements with attribute values of 0 and 1
-            for (int j = 0; j < inputs.Length; j++)
-            {
-                
-                if (inputs[j][attributeToCheck] == 0)
-                {
-                    numberOfElementsWithAttribute0++;
-                    outputSubsetAttribute0.Add(outputs[j]);
-                }
-                else
-                {
-                    numberOfElementsWithAttribute1++;
-                    outputSubsetAttribute1.Add(outputs[j]);
-                }
-            }
-
-            //Make array of outputs for which attribute value is one or the other
-            int[] outputSubsetAttribute0Array = outputSubsetAttribute0.ToArray<int>();
-            int[] outputSubsetAttribute1Array = outputSubsetAttribute1.ToArray<int>();
-
-            double PStarE0 = numberOfElementsWithAttribute0 / (double)NumberOfItemsInOriginalDataset;
-            double PStarE1 = numberOfElementsWithAttribute1 / (double)NumberOfItemsInOriginalDataset;
-
-            double topHalfOfPE0 = PStarE0 - (1 - theta);
-            double topHalfOfPE1 = PStarE1 - (1 - theta);
-
-            double PE0 = topHalfOfPE0 / bottomHalf;
-            double PE1 = topHalfOfPE1 / bottomHalf;
-
-            //Limit P*E(0)
-            //if (theta > 0.5)
-            //{
-            //    if (PStarE0 >= theta)
-            //    {
-            //        PE0 = 1;
-            //    }
-            //    else if (PStarE0 >= (1 - theta))
-            //    {
-            //        PE0 = 0;
-            //    }
-            //    else if((1 - theta) < PStarE0 && PStarE0 < theta)
-            //    {
-            //        PE0 = PE0;
-            //    }
-            //    else
-            //    {
-            //        throw new Exception("PStar out of range?");
-            //    }
-            //}
-            //else if (theta < 0.5)
-            //{
-            //    if (PStarE0 <= (1 - theta))
-            //    {
-            //        PE0 = 0;
-            //    }
-            //    else if (PStarE0 <= theta)
-            //    {
-            //        PE0 = 1;
-            //    }
-            //    else if (theta < PStarE0 && PStarE0 < (1 - theta))
-            //    {
-            //        PE0 = PE0;
-            //    }
-            //    else{
-            //        throw new Exception("PStar out of range?");
-            //    }
-            //}
-
-            //Limit P*E(1)
-            //if (theta > 0.5)
-            //{
-            //    if (PStarE1 >= theta)
-            //    {
-            //        PE1 = 1;
-            //    }
-            //    else if (PStarE1 >= (1 - theta))
-            //    {
-            //        PE1 = 1;
-            //    }
-            //    else if ((1 - theta) < PStarE1 && PStarE1 < theta)
-            //    {
-            //        PE1 = PE1;
-            //    }
-            //    else
-            //    {
-            //        throw new Exception("PStar out of range?");
-            //    }
-            //}
-            //else if (theta < 0.5)
-            //{
-            //    if (PStarE1 <= (1 - theta))
-            //    {
-            //        PE1 = 0;
-            //    }
-            //    else if (PStarE1 <= theta)
-            //    {
-            //        PE1 = 1;
-            //    }
-            //    else if (theta < PStarE1 && PStarE1 < (1 - theta))
-            //    {
-            //        PE1 = PE1;
-            //    }
-            //    else
-            //    {
-            //        throw new Exception("PStar out of range?");
-            //    }
-            //}
-
-            double magnitudeOfS0 = PE0 * (double)NumberOfItemsInOriginalDataset;
-            double magnitudeOfS1 = PE1 * (double)NumberOfItemsInOriginalDataset;
+            expressionE0.Add(attributeToCheck, 0);
+            expressionE1.Add(attributeToCheck, 1);
 
 
-            //Get Entropy(Sv) for v = 0, 1
-            entropyOfAttributes0 = Entropy(outputSubsetAttribute0Array, theta);
-            entropyOfAttributes1 = Entropy(outputSubsetAttribute1Array, theta);
-            
-            //Build out elements of summation for infoGain calculation
-            double attribute0SumElement = ((double)magnitudeOfS0 / (double)magnitudeOfS) * entropyOfAttributes0;
-            double attribute1SumElement = ((double)magnitudeOfS1 / (double)magnitudeOfS) * entropyOfAttributes1;
+            double magnitudeOfS0 = getMagnitudeOfS(expressionE0, theta);
+            double magnitudeOfS1 = getMagnitudeOfS(expressionE1, theta);
 
-            //Get value of summation for infoGain
-            double summation = attribute0SumElement + attribute1SumElement;
+            double entropyS0 = Entropy(theta, expressionE0);
+            double entropyS1 = Entropy(theta, expressionE1);
 
-            //Get and return infoGain
+
+            double summationPart0 = (magnitudeOfS0 / magnitudeOfS) * entropyS0;
+            double summationPart1 = (magnitudeOfS1 / magnitudeOfS) * entropyS1;
+
+            double summation = summationPart0 + summationPart1;
+
             double infoGain = entropyOfSet - summation;
+
             return infoGain;
+
+        }
+
+        public static double getMagnitudeOfS(Dictionary<int, int> expressionE, double theta)
+        {
+            int[] trueIndexes = new int[fullInputs.Length];
+            for (int i = 0; i < fullInputs.Length; i++)
+            {
+                trueIndexes[i] = 0;
+            }
+            double PStarE;
+            //Build P*(E) based on E by building iterating through all key pairs of expressionE and whittling down from overall dataset
+            for (int i = 0; i < fullInputs.Length; i++)
+            {
+                int currentInput = 1;
+                foreach (KeyValuePair<int, int> keyPair in expressionE)
+                {
+                    //Get current attribute and its value from E
+                    int currentAttribute = keyPair.Key;
+                    int currentValue = keyPair.Value;
+                    //List<int[]> newInputs = new List<int[]>();
+                    //List<int> newOutputs = new List<int>();
+                    ////Iterate through all inputs - flag the indices where any key-value pair is false as 0
+                    if (fullInputs[i][currentAttribute] != currentValue)
+                    {
+                        currentInput = 0;
+                    }
+                }
+
+                if (currentInput == 1)
+                {
+                    trueIndexes[i] = 1;
+                }
+
+            }
+
+            double numberOfRows = 0;
+
+            //Count number of rows where trueIndexes is still true (Count P*(E))
+            for (int i = 0; i < trueIndexes.Length; i++)
+            {
+                if (trueIndexes[i] == 1)
+                {
+                    numberOfRows++;
+                }
+
+            }
+
+            //Get P*(E) as a ratio
+            PStarE = numberOfRows / (double)NumberOfItemsInOriginalDataset;
+
+            //Calculate P(E) and |S|
+            double PE = GetPE(PStarE, theta);
+            double magnitudeOfS = PE * (double)NumberOfItemsInOriginalDataset;
+
+            return magnitudeOfS;
         }
     }
 }

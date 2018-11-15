@@ -330,7 +330,7 @@ namespace CS_7850_RR_Classifier
                     var capitalGain = row["CapitalGain"];
                     var capitalLoss = row["CapitalLoss"];
                     var hoursPerWeek = row["HoursPerWeek"];
-                    var salary = row["SalaryLabel"];
+                    //var salary = row["SalaryLabel"];
                     //dataset.Columns.Add("SalaryLabel");
                     //int newSalary = 0;   
                     int newAge = 0;
@@ -340,7 +340,7 @@ namespace CS_7850_RR_Classifier
                     int newCapitalGain = 0;
                     int newCapitalLoss = 0;
                     int newHoursPerWeek = 0;
-                    int newSalary = 0;
+                    //int newSalary = 0;
 
                     //Flip salary
                     if (Convert.ToInt32(age) == 0)
@@ -371,10 +371,10 @@ namespace CS_7850_RR_Classifier
                     {
                         newHoursPerWeek = 1;
                     }
-                    if (Convert.ToInt32(salary) == 0)
-                    {
-                        newSalary = 1;
-                    }
+                    //if (Convert.ToInt32(salary) == 0)
+                    //{
+                    //    newSalary = 1;
+                    //}
                     //Insert flipped attributes into datatable.
                     //row["Salary"] = newSalary;
                     row["Age"] = newAge;
@@ -384,7 +384,7 @@ namespace CS_7850_RR_Classifier
                     row["CapitalGain"] = newCapitalGain;
                     row["CapitalLoss"] = newCapitalLoss;
                     row["HoursPerWeek"] = newHoursPerWeek;
-                    row["SalaryLabel"] = newSalary;
+                    //row["SalaryLabel"] = newSalary;
                 }
 
             }
@@ -604,12 +604,12 @@ namespace CS_7850_RR_Classifier
 
             //DataTable randomizedIncomeTestingDataset = RandomizeIncomeDataset(incomeTestingDataset, 1, theta);
 
-            for (int i = 0; i < 50; i++)
-            {
+            //for (int i = 0; i < 50; i++)
+            //{
                 DataTable randomizedIncomeTrainingDataset = RandomizeIncomeDataset(incomeTrainingDataset, 0, theta);
                 double randomizedIncomeAccuracy = ModifiedIncomeDecision(randomizedIncomeTrainingDataset, incomeTestingDataset, theta);
                 accuracyMeasurements.Add(randomizedIncomeAccuracy);
-            }
+            //}
             double[] accuracyArray = accuracyMeasurements.ToArray<double>();
 
             return accuracyArray;
