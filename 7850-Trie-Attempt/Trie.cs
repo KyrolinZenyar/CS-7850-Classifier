@@ -161,7 +161,7 @@ namespace CS_7850_RR_Classifier
 
         public Trie(int[][] inputs, int[] outputs, int totalSetSize)
         {
-            int attributeCount = 0;
+            //int attributeCount = 0;
             List<int> attributes = new List<int>();
             //attributeCount = inputs[i].Length;
                 //attributes = new int[attributeCount];

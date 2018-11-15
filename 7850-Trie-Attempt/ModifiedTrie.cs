@@ -1,4 +1,5 @@
 ﻿using Accord.Math;
+using MathNet.Numerics.LinearAlgebra;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -243,12 +244,17 @@ namespace CS_7850_RR_Classifier
         public static double Entropy(double theta, Dictionary<int, int> expressionE)
         {
             double entropy = 0;
-            int[] trueIndexes = new int[fullInputs.Length];
-            for(int i = 0; i < fullInputs.Length; i++)
+            int[] PStarEIndexes = new int[fullInputs.Length];
+            int[] PStarEBarIndexes = new int[fullInputs.Length];
+
+            for (int i = 0; i < fullInputs.Length; i++)
             {
-                trueIndexes[i] = 0;
+                PStarEIndexes[i] = 0;
+                PStarEBarIndexes[i] = 0;
             }
             double PStarE;
+            double PStarEBar;
+
             //Build P*(E) based on E by building iterating through all key pairs of expressionE and whittling down from overall dataset
             for (int i = 0; i < fullInputs.Length; i++)
             {
@@ -269,17 +275,16 @@ namespace CS_7850_RR_Classifier
 
                 if(currentInput == 1)
                 {
-                    trueIndexes[i] = 1;
+                    PStarEIndexes[i] = 1;
                 }
-
             }
 
             double numberOfRows = 0;
 
             //Count number of rows where trueIndexes is still true (Count P*(E))
-            for(int i = 0; i < trueIndexes.Length; i++)
+            for(int i = 0; i < PStarEIndexes.Length; i++)
             {
-                if(trueIndexes[i] == 1)
+                if(PStarEIndexes[i] == 1)
                 {
                     numberOfRows++;
                 }
@@ -289,12 +294,54 @@ namespace CS_7850_RR_Classifier
             //Get P*(E) as a ratio
             PStarE = numberOfRows / (double)NumberOfItemsInOriginalDataset;
 
+            //Build P*(E) based on E by building iterating through all key pairs of expressionE and whittling down from overall dataset
+            for (int i = 0; i < fullInputs.Length; i++)
+            {
+                int currentInput = 1;
+                foreach (KeyValuePair<int, int> keyPair in expressionE)
+                {
+                    //Get current attribute and its value from E
+                    int currentAttribute = keyPair.Key;
+                    //Add 1 and mod by 2 - this will flip the value (0 + 1 % 2 = 1, 1 + 1 % 2 = 0)
+                    int currentValue = (keyPair.Value + 1) % 2;
+                    //List<int[]> newInputs = new List<int[]>();
+                    //List<int> newOutputs = new List<int>();
+                    ////Iterate through all inputs - flag the indices where any key-value pair is false as 0
+                    if (fullInputs[i][currentAttribute] != currentValue)
+                    {
+                        currentInput = 0;
+                    }
+                }
+
+                if (currentInput == 1)
+                {
+                    PStarEBarIndexes[i] = 1;
+                }
+            }
+
+            double numberOfEBarRows = 0;
+
+            //Count number of rows where trueIndexes is still true (Count P*(E))
+            for (int i = 0; i < PStarEBarIndexes.Length; i++)
+            {
+                if (PStarEBarIndexes[i] == 1)
+                {
+                    numberOfEBarRows++;
+                }
+
+            }
+
+            //Get P*(E) as a ratio
+            PStarEBar = numberOfEBarRows / (double)NumberOfItemsInOriginalDataset;
+
             //Calculate P(E) and |S|
-            double PE = GetPE(PStarE, theta);
+            double PE = GetPE(PStarE, PStarEBar, theta);
             double magnitudeOfS = PE * (double)NumberOfItemsInOriginalDataset;
 
 
             double PStarEQ0 = 0;
+
+            double PStarEBarQ0 = 0;
 
             //Get P*(E) for Q0
             //for (int i = 0; i < fullOutputs.Length; i++)
@@ -305,14 +352,14 @@ namespace CS_7850_RR_Classifier
             //    }
             //}
 
-           // int[] Q0trueIndexes = new int[trueIndexes.Length];
+            // int[] Q0trueIndexes = new int[trueIndexes.Length];
 
             double Q0numberOfRows = 0;
 
             //Count number of rows where trueIndexes is still true (Count P*(E))
-            for (int i = 0; i < trueIndexes.Length; i++)
+            for (int i = 0; i < PStarEIndexes.Length; i++)
             {
-                if (trueIndexes[i] == 1 && fullOutputs[i] == 0)
+                if (PStarEIndexes[i] == 1 && fullOutputs[i] == 0)
                 {
                     Q0numberOfRows++;
                 }
@@ -322,8 +369,23 @@ namespace CS_7850_RR_Classifier
             //Get P*(E) for Q0 as a ratio
             PStarEQ0 = Q0numberOfRows / (double)NumberOfItemsInOriginalDataset;
 
+            double EBarQ0numberOfRows = 0;
+
+            //Count number of rows where trueIndexes is still true (Count P*(E))
+            for (int i = 0; i < PStarEBarIndexes.Length; i++)
+            {
+                if (PStarEBarIndexes[i] == 1 && fullOutputs[i] == 0)
+                {
+                    EBarQ0numberOfRows++;
+                }
+
+            }
+
+            //Get P*(E) for Q0 as a ratio
+            PStarEBarQ0 = EBarQ0numberOfRows / (double)NumberOfItemsInOriginalDataset;
+
             //Get P(E) for Q0, then calculate Q0 and Q1.
-            double PEQ0 = GetPE(PStarEQ0, theta);
+            double PEQ0 = GetPE(PStarEQ0, PStarEBarQ0, theta);
 
             double Q0 = (PEQ0 * (double)NumberOfItemsInOriginalDataset) / magnitudeOfS;
             double Q1 = 1 - Q0;
@@ -337,15 +399,27 @@ namespace CS_7850_RR_Classifier
         }
 
         //Method to get PE given a PStarE and theta
-        public static double GetPE(double PStarE, double theta)
+        public static double GetPE(double PStarE, double PStarEBar, double theta)
         {
-            if(PStarE == 1)
+            //P*(E) = P(E) * theta + P(EBar) * (1 - theta)
+            //P*(EBar) = P(EBar) * theta + P(E) * (1 - theta)
+            if (PStarE == 1)
             {
                 return 1;
             }
-            double PETopHalf = PStarE - (1 - theta);
-            double PEBottomHalf = (2 * theta) - 1;
-            double PE = PETopHalf / PEBottomHalf;
+            //double PETopHalf = PStarE - (1 - theta);
+            //double PEBottomHalf = (2 * theta) - 1;
+            //double PE = PETopHalf / PEBottomHalf;
+
+            var A = Matrix<double>.Build.DenseOfArray(new double[,]
+            {
+                {theta, (1-theta) },
+                {(1-theta), theta }
+            });
+            var b = Vector<double>.Build.Dense(new double[] { PStarE, PStarEBar });
+            var x = A.Solve(b);
+
+            double PE = x.First();
 
             return PE;
         }
@@ -392,12 +466,17 @@ namespace CS_7850_RR_Classifier
 
         public static double getMagnitudeOfS(Dictionary<int, int> expressionE, double theta)
         {
-            int[] trueIndexes = new int[fullInputs.Length];
+            int[] PStarEIndexes = new int[fullInputs.Length];
+            int[] PStarEBarIndexes = new int[fullInputs.Length];
+
             for (int i = 0; i < fullInputs.Length; i++)
             {
-                trueIndexes[i] = 0;
+                PStarEIndexes[i] = 0;
+                PStarEBarIndexes[i] = 0;
             }
             double PStarE;
+            double PStarEBar;
+
             //Build P*(E) based on E by building iterating through all key pairs of expressionE and whittling down from overall dataset
             for (int i = 0; i < fullInputs.Length; i++)
             {
@@ -418,17 +497,16 @@ namespace CS_7850_RR_Classifier
 
                 if (currentInput == 1)
                 {
-                    trueIndexes[i] = 1;
+                    PStarEIndexes[i] = 1;
                 }
-
             }
 
             double numberOfRows = 0;
 
             //Count number of rows where trueIndexes is still true (Count P*(E))
-            for (int i = 0; i < trueIndexes.Length; i++)
+            for (int i = 0; i < PStarEIndexes.Length; i++)
             {
-                if (trueIndexes[i] == 1)
+                if (PStarEIndexes[i] == 1)
                 {
                     numberOfRows++;
                 }
@@ -438,8 +516,48 @@ namespace CS_7850_RR_Classifier
             //Get P*(E) as a ratio
             PStarE = numberOfRows / (double)NumberOfItemsInOriginalDataset;
 
+            //Build P*(E) based on E by building iterating through all key pairs of expressionE and whittling down from overall dataset
+            for (int i = 0; i < fullInputs.Length; i++)
+            {
+                int currentInput = 1;
+                foreach (KeyValuePair<int, int> keyPair in expressionE)
+                {
+                    //Get current attribute and its value from E
+                    int currentAttribute = keyPair.Key;
+                    //Add 1 and mod by 2 - this will flip the value (0 + 1 % 2 = 1, 1 + 1 % 2 = 0)
+                    int currentValue = (keyPair.Value + 1) % 2;
+                    //List<int[]> newInputs = new List<int[]>();
+                    //List<int> newOutputs = new List<int>();
+                    ////Iterate through all inputs - flag the indices where any key-value pair is false as 0
+                    if (fullInputs[i][currentAttribute] != currentValue)
+                    {
+                        currentInput = 0;
+                    }
+                }
+
+                if (currentInput == 1)
+                {
+                    PStarEBarIndexes[i] = 1;
+                }
+            }
+
+            double numberOfEBarRows = 0;
+
+            //Count number of rows where trueIndexes is still true (Count P*(E))
+            for (int i = 0; i < PStarEBarIndexes.Length; i++)
+            {
+                if (PStarEBarIndexes[i] == 1)
+                {
+                    numberOfEBarRows++;
+                }
+
+            }
+
+            //Get P*(E) as a ratio
+            PStarEBar = numberOfEBarRows / (double)NumberOfItemsInOriginalDataset;
+
             //Calculate P(E) and |S|
-            double PE = GetPE(PStarE, theta);
+            double PE = GetPE(PStarE, PStarEBar, theta);
             double magnitudeOfS = PE * (double)NumberOfItemsInOriginalDataset;
 
             return magnitudeOfS;
