@@ -28,43 +28,46 @@ namespace CS_7850_RR_Classifier
             //P*(E) is the number of elements in outputs (as the tree goes down the edges, outputs shrinks; the number of items in outputs is equivalent 
             //to P*(E) where E is the attributes as given so far.
 
-            public Node(int[][] inputs, int[] outputs, int[] attributes, int height, int majorityClassOfParentNode, double theta, Dictionary<int, int> expressionE)
+            public Node(int[] attributes, int height, int majorityClassOfParentNode, double theta, Dictionary<int, int> expressionE)
             {
+                double numberOfElementsinSet = getNumberOfElementsinSet(expressionE, theta);
                 //If outputs is empty, set the class to be the majority class of the parent node
-                if (outputs.Length == 0) {
+                if (numberOfElementsinSet == 0) {
                     Class = majorityClassOfParentNode;
                 }
-                else { 
+                else {
 
-
+                    double numberOfElementsInSetWithClassLabel0 = getNumberOfElementsinSetWithClassLabel0(expressionE, theta);
                     //Set class to -1 to mark as non-leaf unless it gets changed.
                     Class = -1;
 
                     //2. Check if S consists of all the same class - if so, return node as a leaf labeled with the class
-                    int numberOfClassZeroItems = 0;
-                    //Run through all class labels and tally how many are 0.
-                    for (int i = 0; i < outputs.Length; i++)
-                    {
-                        if (outputs[i] == 0)
-                        {
-                            numberOfClassZeroItems++;
-                        }
-                    }
-
                     //If all or none of the class labels are 0, then all items are one class - label as a leaf and assign class label.
-                    if (numberOfClassZeroItems == 0 || numberOfClassZeroItems == outputs.Length)
+                    if (numberOfElementsInSetWithClassLabel0 == 0)
                     {
-                        Class = outputs[0];
+                        Class = 1;
                         //IsTerminal = true;
+                    }
+                    else if (numberOfElementsInSetWithClassLabel0 == numberOfElementsinSet)
+                    {
+                        Class = 0;
                     }
                     else
                     {
-
+                        int majorityClassOfS = -1;
+                        if(numberOfElementsInSetWithClassLabel0 >= (numberOfElementsinSet / 2))
+                        {
+                            majorityClassOfS = 0;
+                        }
+                        else
+                        {
+                            majorityClassOfS = 1;
+                        }
 
                         //3. If attribute list is empty, return node as leaf labeled with majority class in S
                         if (attributes.Length == 0)
                         {
-                            Class = Accord.Statistics.Measures.Mode(outputs);
+                            Class = majorityClassOfS;
                             Attribute = -1;
                             //IsTerminal = true;
                         }
@@ -81,7 +84,7 @@ namespace CS_7850_RR_Classifier
                             for (int i = 0; i < attributes.Length; i++)
                             {
                                 //Calculate information gain on each attribute
-                                double attributeInfoGain = CalculateInformationGain(inputs, outputs, attributes[i], entropyOfSet, theta, expressionE);
+                                double attributeInfoGain = CalculateInformationGain(attributes[i], entropyOfSet, theta, expressionE);
                                 //If info gain is greater than the current max, set new max info gain and associated attribute
                                 if(i == 0)
                                 {
@@ -115,41 +118,41 @@ namespace CS_7850_RR_Classifier
                             //6. For each value of the attribute chosen (0, 1)
                             //a. Grow a branch from Node for condition Attribute = i (will be done last - need to determine whether to build leaf node or non-leaf node)
 
-                            double elementsWithAttribute0 = 0;
-                            double elementsWithAttribute1 = 0;
-                            List<int> outputSubsetAttribute0 = new List<int>();
-                            List<int> outputSubsetAttribute1 = new List<int>();
-                            List<int[]> inputSubsetAttribute0 = new List<int[]>();
-                            List<int[]> inputSubsetAttribute1 = new List<int[]>();
+                            //double elementsWithAttribute0 = 0;
+                            //double elementsWithAttribute1 = 0;
+                            //List<int> outputSubsetAttribute0 = new List<int>();
+                            //List<int> outputSubsetAttribute1 = new List<int>();
+                            //List<int[]> inputSubsetAttribute0 = new List<int[]>();
+                            //List<int[]> inputSubsetAttribute1 = new List<int[]>();
 
-                            //Get elements where max info attribute is 0 or 1
-                            for (int j = 0; j < inputs.Length; j++)
-                            {
-                                if (inputs[j][maxInfoGainAttribute] == 0)
-                                {
-                                    elementsWithAttribute0++;
-                                    outputSubsetAttribute0.Add(outputs[j]);
-                                    inputSubsetAttribute0.Add(inputs[j]);
-                                }
-                                else
-                                {
-                                    elementsWithAttribute1++;
-                                    outputSubsetAttribute1.Add(outputs[j]);
-                                    inputSubsetAttribute1.Add(inputs[j]);
-                                }
-                            }
+                            ////Get elements where max info attribute is 0 or 1
+                            //for (int j = 0; j < inputs.Length; j++)
+                            //{
+                            //    if (inputs[j][maxInfoGainAttribute] == 0)
+                            //    {
+                            //        elementsWithAttribute0++;
+                            //        outputSubsetAttribute0.Add(outputs[j]);
+                            //        inputSubsetAttribute0.Add(inputs[j]);
+                            //    }
+                            //    else
+                            //    {
+                            //        elementsWithAttribute1++;
+                            //        outputSubsetAttribute1.Add(outputs[j]);
+                            //        inputSubsetAttribute1.Add(inputs[j]);
+                            //    }
+                            //}
 
-                            int[][] inputSubsetAttribute0Array = inputSubsetAttribute0.ToArray<int[]>();
-                            int[][] inputSubsetAttribute1Array = inputSubsetAttribute1.ToArray<int[]>();
-                            int[] outputSubsetAttribute0Array = outputSubsetAttribute0.ToArray<int>();
-                            int[] outputSubsetAttribute1Array = outputSubsetAttribute1.ToArray<int>();
+                            //int[][] inputSubsetAttribute0Array = inputSubsetAttribute0.ToArray<int[]>();
+                            //int[][] inputSubsetAttribute1Array = inputSubsetAttribute1.ToArray<int[]>();
+                            //int[] outputSubsetAttribute0Array = outputSubsetAttribute0.ToArray<int>();
+                            //int[] outputSubsetAttribute1Array = outputSubsetAttribute1.ToArray<int>();
 
 
                             //b. Let si be the set of samples in S where TA = ai.
                             //c. If si is empty, then attach a leaf labeled with majority class in S (create new node, it'll figure it out)
                             //d. Else attach the node returned by ID3(si, AL-TA) (create new node, it will be done programatically).
 
-                            int majorityClassOfS = Accord.Statistics.Measures.Mode(outputs);
+                            //int majorityClassOfS = Accord.Statistics.Measures.Mode(outputs);
 
                             //Build out expression E defining node logic
                             Dictionary<int, int> expressionE0 = new Dictionary<int, int>();
@@ -165,8 +168,11 @@ namespace CS_7850_RR_Classifier
                             expressionE1.Add(maxInfoGainAttribute, 1);
 
                             //Create node for attribute 0
-                            Node attribute0Node = new Node(inputSubsetAttribute0Array, outputSubsetAttribute0Array, newAttributes, height++, majorityClassOfS, theta, expressionE0);
-                            Node attribute1Node = new Node(inputSubsetAttribute1Array, outputSubsetAttribute1Array, newAttributes, height++, majorityClassOfS, theta, expressionE1);
+                            //Node attribute0Node = new Node(inputSubsetAttribute0Array, outputSubsetAttribute0Array, newAttributes, height++, majorityClassOfS, theta, expressionE0);
+                            //Node attribute1Node = new Node(inputSubsetAttribute1Array, outputSubsetAttribute1Array, newAttributes, height++, majorityClassOfS, theta, expressionE1);
+                            height = height + 1;
+                            Node attribute0Node = new Node(newAttributes, height, majorityClassOfS, theta, expressionE0);
+                            Node attribute1Node = new Node(newAttributes, height, majorityClassOfS, theta, expressionE1);
 
                             //Connect nodes by an edge
                             Edges.Add(0, attribute0Node);
@@ -197,7 +203,7 @@ namespace CS_7850_RR_Classifier
             fullInputs = inputs;
             fullOutputs = outputs;
             Dictionary<int, int> expressionE = new Dictionary<int, int>();
-            Root = new Node(inputs, outputs, attributesArray, 0, majorityClassOfS, theta, expressionE);
+            Root = new Node(attributesArray, 0, majorityClassOfS, theta, expressionE);
         }
 
         public int[] Decide(int[][] inputs)
@@ -308,44 +314,13 @@ namespace CS_7850_RR_Classifier
                 }
             }
 
+            if(numberOfRows == 0)
+            {
+                return 0;
+            }
+
             //Get P*(E) as a ratio
             PStarE = numberOfRows / (double)NumberOfItemsInOriginalDataset;
-
-            ////Build P*(E) based on E by building iterating through all key pairs of expressionE and whittling down from overall dataset
-            //for (int i = 0; i < fullInputs.Length; i++)
-            //{
-            //    int currentInput = 1;
-            //    foreach (KeyValuePair<int, int> keyPair in expressionE)
-            //    {
-            //        //Get current attribute and its value from E
-            //        int currentAttribute = keyPair.Key;
-            //        //Add 1 and mod by 2 - this will flip the value (0 + 1 % 2 = 1, 1 + 1 % 2 = 0)
-            //        int currentValue = (keyPair.Value + 1) % 2;
-            //        //List<int[]> newInputs = new List<int[]>();
-            //        //List<int> newOutputs = new List<int>();
-            //        ////Iterate through all inputs - flag the indices where any key-value pair is false as 0
-            //        if (fullInputs[i][currentAttribute] != currentValue)
-            //        {
-            //            currentInput = 0;
-            //        }
-            //    }
-
-            //    if (currentInput == 1)
-            //    {
-            //        PStarEBarIndexes[i] = 1;
-            //    }
-            //}
-
-
-            //Count number of rows where trueIndexes is still true (Count P*(E))
-            //for (int i = 0; i < PStarEBarIndexes.Length; i++)
-            //{
-            //    if (PStarEBarIndexes[i] == 1)
-            //    {
-            //        numberOfEBarRows++;
-            //    }
-
-            //}
 
             //Get P*(E) as a ratio
             PStarEBar = numberOfEBarRows / (double)NumberOfItemsInOriginalDataset;
@@ -358,17 +333,6 @@ namespace CS_7850_RR_Classifier
             double PStarEQ0 = 0;
 
             double PStarEBarQ0 = 0;
-
-            //Get P*(E) for Q0
-            //for (int i = 0; i < fullOutputs.Length; i++)
-            //{
-            //    if(fullOutputs[i] == 0 && trueIndexes[i] == 1)
-            //    {
-            //        PStarEQ0++;
-            //    }
-            //}
-
-            // int[] Q0trueIndexes = new int[trueIndexes.Length];
 
             double Q0numberOfRows = 0;
             double EBarQ0numberOfRows = 0;
@@ -410,6 +374,11 @@ namespace CS_7850_RR_Classifier
             double Q0 = (PEQ0 * (double)NumberOfItemsInOriginalDataset) / magnitudeOfS;
             double Q1 = 1 - Q0;
 
+            if(Q0 == 0 || Q1 == 0)
+            {
+                return 0;
+            }
+
             //Calculate entropy based on Q0 and Q1
             entropy -= Q0 * Math.Log(Q0, 2);
             entropy -= Q1 * Math.Log(Q1, 2);
@@ -446,7 +415,7 @@ namespace CS_7850_RR_Classifier
 
         //P*(E) is the number of elements in outputs or inputs (as the tree goes down the edges, outputs shrinks; the number of items in outputs/inputs is equivalent 
         //to P*(E) where E is the attributes as given so far).
-        public static double CalculateInformationGain(int[][] inputs, int[] outputs, int attributeToCheck, double entropyOfSet, double theta, Dictionary<int, int> expressionE)
+        public static double CalculateInformationGain(int attributeToCheck, double entropyOfSet, double theta, Dictionary<int, int> expressionE)
         {
             //Information gain for a given attribute is defined as 
             //Gain(S, A) = Entropy(S) - Sum v in a ((|Sv|/|S|)*Entropy(Sv)) where v is all possible values for A (in this case {0, 1}) and Sv is all elements is S where A has value v.
@@ -582,5 +551,125 @@ namespace CS_7850_RR_Classifier
 
             return magnitudeOfS;
         }
+
+        public static double getNumberOfElementsinSet(Dictionary<int, int> expressionE, double theta)
+        {
+            int[] PStarEIndexes = new int[fullInputs.Length];
+            int[] PStarEBarIndexes = new int[fullInputs.Length];
+
+            for (int i = 0; i < fullInputs.Length; i++)
+            {
+                PStarEIndexes[i] = 0;
+                PStarEBarIndexes[i] = 0;
+            }
+            double PStarE;
+            double PStarEBar;
+
+            //Build P*(E) based on E by building iterating through all key pairs of expressionE and whittling down from overall dataset
+            for (int i = 0; i < fullInputs.Length; i++)
+            {
+                int currentInput = 1;
+                foreach (KeyValuePair<int, int> keyPair in expressionE)
+                {
+                    //Get current attribute and its value from E
+                    int currentAttribute = keyPair.Key;
+                    int currentValue = keyPair.Value;
+                    //List<int[]> newInputs = new List<int[]>();
+                    //List<int> newOutputs = new List<int>();
+                    ////Iterate through all inputs - flag the indices where any key-value pair is false as 0
+                    if (fullInputs[i][currentAttribute] != currentValue)
+                    {
+                        currentInput = 0;
+                    }
+                }
+
+                if (currentInput == 1)
+                {
+                    PStarEIndexes[i] = 1;
+                }
+            }
+
+            double numberOfRows = 0;
+
+            //Count number of rows where trueIndexes is still true (Count P*(E))
+            for (int i = 0; i < PStarEIndexes.Length; i++)
+            {
+                if (PStarEIndexes[i] == 1)
+                {
+                    numberOfRows++;
+                }
+
+            }
+
+            return numberOfRows;
+        }
+
+        public static double getNumberOfElementsinSetWithClassLabel0(Dictionary<int, int> expressionE, double theta) {
+            int[] PStarEIndexes = new int[fullInputs.Length];
+            int[] PStarEBarIndexes = new int[fullInputs.Length];
+
+            for (int i = 0; i < fullInputs.Length; i++)
+            {
+                PStarEIndexes[i] = 0;
+                PStarEBarIndexes[i] = 0;
+            }
+
+            //Build P*(E) based on E by building iterating through all key pairs of expressionE and whittling down from overall dataset
+            for (int i = 0; i < fullInputs.Length; i++)
+            {
+                int currentInput = 1;
+                int oppositeInput = 1;
+                foreach (KeyValuePair<int, int> keyPair in expressionE)
+                {
+                    //Get current attribute and its value from E
+                    int currentAttribute = keyPair.Key;
+                    int currentValue = keyPair.Value;
+                    int oppositeValue = (keyPair.Value + 1) % 2;
+
+                    //List<int[]> newInputs = new List<int[]>();
+                    //List<int> newOutputs = new List<int>();
+                    ////Iterate through all inputs - flag the indices where any key-value pair is false as 0
+                    if (fullInputs[i][currentAttribute] != currentValue)
+                    {
+                        currentInput = 0;
+                    }
+
+                    if (fullInputs[i][currentAttribute] != oppositeValue)
+                    {
+                        oppositeInput = 0;
+                    }
+                }
+
+                if (oppositeInput == 1)
+                {
+                    PStarEBarIndexes[i] = 1;
+                }
+
+                if (currentInput == 1)
+                {
+                    PStarEIndexes[i] = 1;
+                }
+            }
+
+            double Q0numberOfRows = 0;
+            double EBarQ0numberOfRows = 0;
+
+            //Count number of rows where trueIndexes is still true (Count P*(E))
+            for (int i = 0; i < PStarEIndexes.Length; i++)
+            {
+                if (PStarEIndexes[i] == 1 && fullOutputs[i] == 0)
+                {
+                    Q0numberOfRows++;
+                }
+                if (PStarEBarIndexes[i] == 1 && fullOutputs[i] == 0)
+                {
+                    EBarQ0numberOfRows++;
+                }
+
+            }
+
+            return Q0numberOfRows;
+        }
+
     }
 }

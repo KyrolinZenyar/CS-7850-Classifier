@@ -23,14 +23,14 @@ namespace CS_7850_RR_Classifier
         {
             double theta = 0;
 
-            DataTable incomeTrainingDataset = LoadIncomeDataset(0);
-            DataTable incomeTestingDataset = LoadIncomeDataset(1);
+            //DataTable incomeTrainingDataset = LoadIncomeDataset(0);
+            //DataTable incomeTestingDataset = LoadIncomeDataset(1);
+            DataTable incomeDataset = LoadIncomeDataset();
+            DataTable incomeTrainingDataset = SplitIncomeDataset(incomeDataset, 0);
+            DataTable incomeTestingDataset = SplitIncomeDataset(incomeDataset, 1);
             double benchmarkIncomeAccuracy = IncomeDecision(incomeTrainingDataset, incomeTestingDataset);
 
-            theta = 1.0;
-            double[] accuracyFor10 = testRandomization(incomeTrainingDataset, incomeTestingDataset, theta);
-            //Get accuracy data
-            theta = 0;
+            
             double[] accuracyFor0 = testRandomization(incomeTrainingDataset, incomeTestingDataset, theta);
             theta = 0.1;
             double[] accuracyFor01 = testRandomization(incomeTrainingDataset, incomeTestingDataset, theta);
@@ -54,8 +54,8 @@ namespace CS_7850_RR_Classifier
             double[] accuracyFor08 = testRandomization(incomeTrainingDataset, incomeTestingDataset, theta);
             theta = 0.9;
             double[] accuracyFor09 = testRandomization(incomeTrainingDataset, incomeTestingDataset, theta);
-            //theta = 1.0;
-            //double[] accuracyFor10 = testRandomization(incomeTrainingDataset, incomeTestingDataset, theta);
+            theta = 1.0;
+            double[] accuracyFor10 = testRandomization(incomeTrainingDataset, incomeTestingDataset, theta);
 
             double meanFor0 = Accord.Statistics.Measures.Mean(accuracyFor0);
             double meanFor01 = Accord.Statistics.Measures.Mean(accuracyFor01);
@@ -157,19 +157,19 @@ namespace CS_7850_RR_Classifier
 
         //Method to load in a dataset from one of the CSVs (training or testing)
         //trainingOrTesting variable: = 0 means get training data, = 1 means get testing data
-        public static DataTable LoadIncomeDataset(int trainingOrTesting)
+        public static DataTable LoadIncomeDataset()
         {
             var rowCount = 0;
             StreamReader reader;
-            DataTable dataset;
-            if (trainingOrTesting == 0)
-            {
-                dataset = new DataTable("Income Training Dataset");
-            }
-            else
-            {
-                dataset = new DataTable("Income Testing Dataset");
-            }
+            DataTable dataset = new DataTable("Income Dataset");
+            //if (trainingOrTesting == 0)
+            //{
+            //    dataset = new DataTable("Income Training Dataset");
+            //}
+            //else
+            //{
+            //    dataset = new DataTable("Income Testing Dataset");
+            //}
 
 
             //Stripping out all discrete string data - unsure how to binarize.
@@ -200,111 +200,264 @@ namespace CS_7850_RR_Classifier
 
 
             //Read in data
-            if (trainingOrTesting == 0)
-            {
-                reader = new StreamReader("Datasets/paper-dataset-income-training.data");
-            }
-            else
-            {
-                reader = new StreamReader("Datasets/paper-dataset-income-testing.data");
-            }
+            //if (trainingOrTesting == 0)
+            //{
+            //    reader = new StreamReader("Datasets/paper-dataset-income-training.data");
+            //}
+            //else
+            //{
+            //    reader = new StreamReader("Datasets/paper-dataset-income-testing.data");
+            //}
+            reader = new StreamReader("Datasets/paper-dataset-income-top10k.data");
+            List<double> ages = new List<double>();
+            List<double> finalWeights = new List<double>();
+            List<double> educationNums = new List<double>();
+            List<double> capitalGains = new List<double>();
+            List<double> capitalLosses = new List<double>();
+            List<double> hoursPerWeeks = new List<double>();
+            
             while (!reader.EndOfStream)
             {
                 var line = reader.ReadLine();
                 //Strip whitespace from csv line
                 var strippedLine = Regex.Replace(line, @"\s+", "");
                 var values = strippedLine.Split(',');
-                var age = 0;
-                var finalWeight = 0;
-                var educationNum = 0;
-                var capitalGain = 0;
-                var capitalLoss = 0;
-                var hoursPerWeek = 0;
-                var sex = 0;
-                var salary = 0;
-
-                //Binarize data based on medians of range
-                if (Convert.ToInt32(values[0]) <= 53.5)
-                {
-                    age = 0;
-                }
-                else
-                {
-                    age = 1;
-                }
-
-                if (Convert.ToInt32(values[2]) <= 622942.5)
-                {
-                    finalWeight = 0;
-                }
-                else
-                {
-                    finalWeight = 1;
-                }
-
-                if (Convert.ToInt32(values[4]) <= 8.5)
-                {
-                    educationNum = 0;
-                }
-                else
-                {
-                    educationNum = 1;
-                }
-
-                if (values[9] == "Male")
-                {
-                    sex = 0;
-                }
-                else
-                {
-                    sex = 1;
-                }
-
-                if (Convert.ToInt32(values[10]) <= 49999.5)
-                {
-                    capitalGain = 0;
-                }
-                else
-                {
-                    capitalGain = 1;
-                }
-
-                if (Convert.ToInt32(values[11]) <= 2178)
-                {
-                    capitalLoss = 0;
-                }
-                else
-                {
-                    capitalLoss = 1;
-                }
-
-                if (Convert.ToInt32(values[12]) <= 50)
-                {
-                    hoursPerWeek = 0;
-                }
-                else
-                {
-                    hoursPerWeek = 1;
-                }
-
-                if (values[14] == "<=50K")
-                {
-                    salary = 0;
-                }
-                else
-                {
-                    salary = 1;
-                }
+    
+                
 
                 //Add row to dataset 
-                dataset.Rows.Add(rowCount, age, finalWeight, educationNum, sex, capitalGain, capitalLoss, hoursPerWeek, salary);
+                dataset.Rows.Add(rowCount, values[0], values[2], values[4], values[9], values[10], values[11], values[12], values[14]);
+
+                ages.Add(Convert.ToDouble(values[0]));
+                finalWeights.Add(Convert.ToDouble(values[2]));
+                educationNums.Add(Convert.ToDouble(values[4]));
+                capitalGains.Add(Convert.ToDouble(values[10]));
+                capitalLosses.Add(Convert.ToDouble(values[11]));
+                hoursPerWeeks.Add(Convert.ToDouble(values[12]));
 
                 //Increment row count
                 rowCount++;
             }
 
-            return dataset;
+            List<double> mediansOfValues = new List<double>();
 
+            double medianAge = GetMedianFromArray(ages.ToArray<double>());
+            double medianFinalWeight = GetMedianFromArray(finalWeights.ToArray<double>());
+            double medianEducationNum = GetMedianFromArray(educationNums.ToArray<double>());
+            double medianCapitalGain = GetMedianFromArray(capitalGains.ToArray<double>());
+            double medianCapitalLoss = GetMedianFromArray(capitalLosses.ToArray<double>());
+            double medianHoursPerWeek = GetMedianFromArray(hoursPerWeeks.ToArray<double>());
+
+            mediansOfValues.Add(medianAge);
+            mediansOfValues.Add(medianFinalWeight);
+            mediansOfValues.Add(medianEducationNum);
+            mediansOfValues.Add(medianCapitalGain);
+            mediansOfValues.Add(medianCapitalLoss);
+            mediansOfValues.Add(medianHoursPerWeek);
+
+            DataTable binarizedDataset = BinarizeDataset(dataset, mediansOfValues);
+
+            return dataset;
+        }
+
+
+        //Taken from https://social.msdn.microsoft.com/Forums/vstudio/en-US/3843c413-7604-4be3-ab30-f96c3a952e52/compute-median-of-values-in-a-datatable-column?forum=vbgeneral
+        //Modified to get median from min-max range, not full data
+        public static double GetMedianFromArray(double[] values)
+        {
+            double median;
+            //median = Accord.Statistics.Measures.Median(values);
+            Array.Sort(values);
+            double max = values.Last();
+            double min = values.First();
+            median = (min + max) / 2.0;
+            //sort the array
+            
+            //if (values.Length % 2 != 0)
+            //{
+            //    median = values[values.Length / 2];
+            //}
+            //else
+            //{
+            //    int middle = values.Length / 2;
+            //    double first = values[middle];
+            //    double second = values[middle - 1];
+            //    median = (first + second) / 2;
+            //}
+            //Max = values.Last();
+
+            return median;
+        }
+
+        public static DataTable BinarizeDataset(DataTable dataset, List<double> medians)
+        {
+            double medianAge = medians.ElementAt(0);
+            double medianFinalWeight = medians.ElementAt(1);
+            double medianEducationNum = medians.ElementAt(2);
+            double medianCapitalGain = medians.ElementAt(3);
+            double medianCapitalLoss = medians.ElementAt(4);
+            double medianHoursPerWeek = medians.ElementAt(5);
+
+
+            foreach (DataRow row in dataset.Rows)
+            {
+                var age = row["Age"];
+                var finalWeight = row["FinalWeight"];
+                var educationNum = row["EducationNum"];
+                var sex = row["Sex"];
+                var capitalGain = row["CapitalGain"];
+                var capitalLoss = row["CapitalLoss"];
+                var hoursPerWeek = row["HoursPerWeek"];
+                var salary = row["SalaryLabel"];
+
+                var binAge = 0;
+                var binFinalWeight = 0;
+                var binEducationNum = 0;
+                var binCapitalGain = 0;
+                var binCapitalLoss = 0;
+                var binHoursPerWeek = 0;
+                var binSex = 0;
+                var binSalary = 0;
+
+
+                //Binarize data based on medians of range
+                if (Convert.ToInt32(age) <= medianAge)
+                {
+                    binAge = 0;
+                }
+                else
+                {
+                    binAge = 1;
+                }
+
+                if (Convert.ToInt32(finalWeight) <= medianFinalWeight)
+                {
+                    binFinalWeight = 0;
+                }
+                else
+                {
+                    binFinalWeight = 1;
+                }
+
+                if (Convert.ToInt32(educationNum) <= medianEducationNum)
+                {
+                    binEducationNum = 0;
+                }
+                else
+                {
+                    binEducationNum = 1;
+                }
+
+                if (sex.ToString() == "Male")
+                {
+                    binSex = 0;
+                }
+                else
+                {
+                    binSex = 1;
+                }
+
+                if (Convert.ToInt32(capitalGain) <= medianCapitalGain)
+                {
+                    binCapitalGain = 0;
+                }
+                else
+                {
+                    binCapitalGain = 1;
+                }
+
+                if (Convert.ToInt32(capitalLoss) <= medianCapitalLoss)
+                {
+                    binCapitalLoss = 0;
+                }
+                else
+                {
+                    binCapitalLoss = 1;
+                }
+
+                if (Convert.ToInt32(hoursPerWeek) <= medianHoursPerWeek)
+                {
+                    binHoursPerWeek = 0;
+                }
+                else
+                {
+                    binHoursPerWeek = 1;
+                }
+
+                if (salary.ToString() == "<=50K")
+                {
+                    binSalary = 0;
+                }
+                else
+                {
+                    binSalary = 1;
+                }
+
+                row["Age"] = binAge;
+                row["FinalWeight"] = binFinalWeight;
+                row["EducationNum"] = binEducationNum;
+                row["Sex"] = binSex;
+                row["CapitalGain"] = binCapitalGain;
+                row["CapitalLoss"] = binCapitalLoss;
+                row["HoursPerWeek"] = binHoursPerWeek;
+                row["SalaryLabel"] = binSalary;
+            }
+
+            return dataset;
+        }
+
+        //trainingOrTesting = 0 means training dataset, 1 means testing dataset
+        public static DataTable SplitIncomeDataset(DataTable incomeDataset, int trainingOrTesting)
+        {
+            DataTable dataset;
+            int startIndex, endIndex;
+            if (trainingOrTesting == 0)
+            {
+                dataset = new DataTable("Income Training Dataset");
+                startIndex = 0;
+                endIndex = incomeDataset.Rows.Count / 2;
+            }
+            else
+            {
+                dataset = new DataTable("Income Testing Dataset");
+                startIndex = incomeDataset.Rows.Count / 2;
+                endIndex = incomeDataset.Rows.Count;
+            }
+
+            dataset.Columns.Add("RowNumber");
+            dataset.Columns.Add("Age");
+            dataset.Columns.Add("FinalWeight");
+            dataset.Columns.Add("EducationNum");
+            dataset.Columns.Add("Sex");
+            dataset.Columns.Add("CapitalGain");
+            dataset.Columns.Add("CapitalLoss");
+            dataset.Columns.Add("HoursPerWeek");
+            dataset.Columns.Add("SalaryLabel");
+
+            int rowCount = 0;
+
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                DataRow currentRow = incomeDataset.Rows[i];
+                //Generate new number from 0 to 1 (including 1, not including 0).
+                //1 - rand is because NextDouble generates from 0 inclusive to 1 non-inclusive.  1 - rand
+                //return 0 non-inclusive to 1 inclusive.
+                //If generated number is greater than the theta provided, leave the response unchanged
+                //Get current row's salary response
+                var age = currentRow["Age"];
+                var finalWeight = currentRow["FinalWeight"];
+                var educationNum = currentRow["EducationNum"];
+                var sex = currentRow["Sex"];
+                var capitalGain = currentRow["CapitalGain"];
+                var capitalLoss = currentRow["CapitalLoss"];
+                var hoursPerWeek = currentRow["HoursPerWeek"];
+                var salary = currentRow["SalaryLabel"];
+
+                dataset.Rows.Add(rowCount, age, finalWeight, educationNum, sex, capitalGain, capitalLoss, hoursPerWeek, salary);
+
+                rowCount++;
+            }
+            return dataset;
         }
 
         //trainingOrTesting variable: = 0 means get training data, = 1 means get testing data
@@ -607,12 +760,12 @@ namespace CS_7850_RR_Classifier
 
             //DataTable randomizedIncomeTestingDataset = RandomizeIncomeDataset(incomeTestingDataset, 1, theta);
 
-            //for (int i = 0; i < 50; i++)
-            //{
+            for (int i = 0; i < 50; i++)
+            {
                 DataTable randomizedIncomeTrainingDataset = RandomizeIncomeDataset(incomeTrainingDataset, 0, theta);
                 double randomizedIncomeAccuracy = ModifiedIncomeDecision(randomizedIncomeTrainingDataset, incomeTestingDataset, theta);
                 accuracyMeasurements.Add(randomizedIncomeAccuracy);
-            //}
+            }
             double[] accuracyArray = accuracyMeasurements.ToArray<double>();
 
             return accuracyArray;
