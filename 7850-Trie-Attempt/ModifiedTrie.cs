@@ -23,15 +23,11 @@ namespace CS_7850_RR_Classifier
             public Dictionary<int, Node> Edges = new Dictionary<int, Node>();
 
             //expressionE is a Dictionary used to set up the attribute expression as described in the paper - the first int is the attribute number and the second int is the value
-            //, Dictionary<int, int> expressionE
-
-            //P*(E) is the number of elements in outputs (as the tree goes down the edges, outputs shrinks; the number of items in outputs is equivalent 
-            //to P*(E) where E is the attributes as given so far.
 
             public Node(int[] attributes, int height, int majorityClassOfParentNode, double theta, Dictionary<int, int> expressionE)
             {
                 double numberOfElementsinSet = getNumberOfElementsinSet(expressionE, theta);
-                //If outputs is empty, set the class to be the majority class of the parent node
+                //If no elements in set matchign expression given to node, set the class to be the majority class of the parent node
                 if (numberOfElementsinSet == 0) {
                     Class = majorityClassOfParentNode;
                 }
@@ -75,7 +71,6 @@ namespace CS_7850_RR_Classifier
                         {
                             double maxInfoGain = 0;
                             int maxInfoGainAttribute = 0;
-                            //outputs, 
                             double entropyOfSet = Entropy(theta, expressionE);
 
                             //4. Select test attribute with highest information gain.
@@ -104,55 +99,13 @@ namespace CS_7850_RR_Classifier
                             List<int> newAttributeList = attributes.ToList();
                             newAttributeList.Remove(maxInfoGainAttribute);
 
-                            ////Make new array of attributes without the max gain attribute
-                            //for (int i = 0; i < attributes.Length; i++)
-                            //{
-                            //    if (i != maxInfoGainAttribute)
-                            //    {
-                            //        newAttributeList.Add(i);
-                            //    }
-                            //}
-
                             int[] newAttributes = newAttributeList.ToArray<int>();
 
                             //6. For each value of the attribute chosen (0, 1)
                             //a. Grow a branch from Node for condition Attribute = i (will be done last - need to determine whether to build leaf node or non-leaf node)
-
-                            //double elementsWithAttribute0 = 0;
-                            //double elementsWithAttribute1 = 0;
-                            //List<int> outputSubsetAttribute0 = new List<int>();
-                            //List<int> outputSubsetAttribute1 = new List<int>();
-                            //List<int[]> inputSubsetAttribute0 = new List<int[]>();
-                            //List<int[]> inputSubsetAttribute1 = new List<int[]>();
-
-                            ////Get elements where max info attribute is 0 or 1
-                            //for (int j = 0; j < inputs.Length; j++)
-                            //{
-                            //    if (inputs[j][maxInfoGainAttribute] == 0)
-                            //    {
-                            //        elementsWithAttribute0++;
-                            //        outputSubsetAttribute0.Add(outputs[j]);
-                            //        inputSubsetAttribute0.Add(inputs[j]);
-                            //    }
-                            //    else
-                            //    {
-                            //        elementsWithAttribute1++;
-                            //        outputSubsetAttribute1.Add(outputs[j]);
-                            //        inputSubsetAttribute1.Add(inputs[j]);
-                            //    }
-                            //}
-
-                            //int[][] inputSubsetAttribute0Array = inputSubsetAttribute0.ToArray<int[]>();
-                            //int[][] inputSubsetAttribute1Array = inputSubsetAttribute1.ToArray<int[]>();
-                            //int[] outputSubsetAttribute0Array = outputSubsetAttribute0.ToArray<int>();
-                            //int[] outputSubsetAttribute1Array = outputSubsetAttribute1.ToArray<int>();
-
-
                             //b. Let si be the set of samples in S where TA = ai.
                             //c. If si is empty, then attach a leaf labeled with majority class in S (create new node, it'll figure it out)
                             //d. Else attach the node returned by ID3(si, AL-TA) (create new node, it will be done programatically).
-
-                            //int majorityClassOfS = Accord.Statistics.Measures.Mode(outputs);
 
                             //Build out expression E defining node logic
                             Dictionary<int, int> expressionE0 = new Dictionary<int, int>();
@@ -168,8 +121,6 @@ namespace CS_7850_RR_Classifier
                             expressionE1.Add(maxInfoGainAttribute, 1);
 
                             //Create node for attribute 0
-                            //Node attribute0Node = new Node(inputSubsetAttribute0Array, outputSubsetAttribute0Array, newAttributes, height++, majorityClassOfS, theta, expressionE0);
-                            //Node attribute1Node = new Node(inputSubsetAttribute1Array, outputSubsetAttribute1Array, newAttributes, height++, majorityClassOfS, theta, expressionE1);
                             height = height + 1;
                             Node attribute0Node = new Node(newAttributes, height, majorityClassOfS, theta, expressionE0);
                             Node attribute1Node = new Node(newAttributes, height, majorityClassOfS, theta, expressionE1);
@@ -273,8 +224,6 @@ namespace CS_7850_RR_Classifier
                     int currentValue = keyPair.Value;
                     int oppositeValue = (keyPair.Value + 1) % 2;
 
-                    //List<int[]> newInputs = new List<int[]>();
-                    //List<int> newOutputs = new List<int>();
                     ////Iterate through all inputs - flag the indices where any key-value pair is false as 0
                     if (fullInputs[i][currentAttribute] != currentValue)
                     {
@@ -354,17 +303,6 @@ namespace CS_7850_RR_Classifier
             //Get P*(E) for Q0 as a ratio
             PStarEQ0 = Q0numberOfRows / (double)NumberOfItemsInOriginalDataset;
 
-
-            ////Count number of rows where trueIndexes is still true (Count P*(E))
-            //for (int i = 0; i < PStarEBarIndexes.Length; i++)
-            //{
-            //    if (PStarEBarIndexes[i] == 1 && fullOutputs[i] == 0)
-            //    {
-            //        EBarQ0numberOfRows++;
-            //    }
-
-            //}
-
             //Get P*(E) for Q0 as a ratio
             PStarEBarQ0 = EBarQ0numberOfRows / (double)NumberOfItemsInOriginalDataset;
 
@@ -396,9 +334,6 @@ namespace CS_7850_RR_Classifier
             {
                 return 1;
             }
-            //double PETopHalf = PStarE - (1 - theta);
-            //double PEBottomHalf = (2 * theta) - 1;
-            //double PE = PETopHalf / PEBottomHalf;
 
             var A = Matrix<double>.Build.DenseOfArray(new double[,]
             {
@@ -413,7 +348,7 @@ namespace CS_7850_RR_Classifier
             return PE;
         }
 
-        //P*(E) is the number of elements in outputs or inputs (as the tree goes down the edges, outputs shrinks; the number of items in outputs/inputs is equivalent 
+        //P*(E) is the number of elements that match the given expression (as the tree goes down the edges, outputs shrinks; the number of items in outputs/inputs is equivalent 
         //to P*(E) where E is the attributes as given so far).
         public static double CalculateInformationGain(int attributeToCheck, double entropyOfSet, double theta, Dictionary<int, int> expressionE)
         {
@@ -475,8 +410,6 @@ namespace CS_7850_RR_Classifier
                     //Get current attribute and its value from E
                     int currentAttribute = keyPair.Key;
                     int currentValue = keyPair.Value;
-                    //List<int[]> newInputs = new List<int[]>();
-                    //List<int> newOutputs = new List<int>();
                     ////Iterate through all inputs - flag the indices where any key-value pair is false as 0
                     if (fullInputs[i][currentAttribute] != currentValue)
                     {
@@ -515,8 +448,6 @@ namespace CS_7850_RR_Classifier
                     int currentAttribute = keyPair.Key;
                     //Add 1 and mod by 2 - this will flip the value (0 + 1 % 2 = 1, 1 + 1 % 2 = 0)
                     int currentValue = (keyPair.Value + 1) % 2;
-                    //List<int[]> newInputs = new List<int[]>();
-                    //List<int> newOutputs = new List<int>();
                     ////Iterate through all inputs - flag the indices where any key-value pair is false as 0
                     if (fullInputs[i][currentAttribute] != currentValue)
                     {
@@ -574,8 +505,6 @@ namespace CS_7850_RR_Classifier
                     //Get current attribute and its value from E
                     int currentAttribute = keyPair.Key;
                     int currentValue = keyPair.Value;
-                    //List<int[]> newInputs = new List<int[]>();
-                    //List<int> newOutputs = new List<int>();
                     ////Iterate through all inputs - flag the indices where any key-value pair is false as 0
                     if (fullInputs[i][currentAttribute] != currentValue)
                     {
@@ -626,8 +555,6 @@ namespace CS_7850_RR_Classifier
                     int currentValue = keyPair.Value;
                     int oppositeValue = (keyPair.Value + 1) % 2;
 
-                    //List<int[]> newInputs = new List<int[]>();
-                    //List<int> newOutputs = new List<int>();
                     ////Iterate through all inputs - flag the indices where any key-value pair is false as 0
                     if (fullInputs[i][currentAttribute] != currentValue)
                     {

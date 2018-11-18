@@ -23,8 +23,6 @@ namespace CS_7850_RR_Classifier
         {
             double theta = 0;
 
-            //DataTable incomeTrainingDataset = LoadIncomeDataset(0);
-            //DataTable incomeTestingDataset = LoadIncomeDataset(1);
             DataTable incomeDataset = LoadIncomeDataset();
             DataTable incomeTrainingDataset = SplitIncomeDataset(incomeDataset, 0);
             DataTable incomeTestingDataset = SplitIncomeDataset(incomeDataset, 1);
@@ -57,6 +55,7 @@ namespace CS_7850_RR_Classifier
             theta = 1.0;
             double[] accuracyFor10 = testRandomization(incomeTrainingDataset, incomeTestingDataset, theta);
 
+            //Get accuracy means for each theta
             double meanFor0 = Accord.Statistics.Measures.Mean(accuracyFor0);
             double meanFor01 = Accord.Statistics.Measures.Mean(accuracyFor01);
             double meanFor02 = Accord.Statistics.Measures.Mean(accuracyFor02);
@@ -85,6 +84,7 @@ namespace CS_7850_RR_Classifier
             means.Add(0.9, meanFor09);
             means.Add(1, meanFor10);
 
+            //Get accuracy variances for each theta
             double varianceFor0 = Accord.Statistics.Measures.Variance(accuracyFor0);
             double varianceFor01 = Accord.Statistics.Measures.Variance(accuracyFor01);
             double varianceFor02 = Accord.Statistics.Measures.Variance(accuracyFor02);
@@ -99,7 +99,7 @@ namespace CS_7850_RR_Classifier
             double varianceFor09 = Accord.Statistics.Measures.Variance(accuracyFor09);
             double varianceFor10 = Accord.Statistics.Measures.Variance(accuracyFor10);
             Dictionary<double, double> variances = new Dictionary<double, double>();
-           // variances.Add(0, varianceFor0);
+            variances.Add(0, varianceFor0);
             variances.Add(0.1, varianceFor01);
             variances.Add(0.2, varianceFor02);
             variances.Add(0.3, varianceFor03);
@@ -113,46 +113,57 @@ namespace CS_7850_RR_Classifier
             variances.Add(0.9, varianceFor09);
             variances.Add(1, varianceFor10);
 
-            //ScatterplotBox.Show();
             double[] thetas = means.Keys.ToArray<double>();
             double[] meanValues = means.Values.ToArray<double>();
+            double[] varianceValues = variances.Values.ToArray<double>();
 
-            //Scatterplot meanScatterPlot = new Scatterplot("Mean comparisons", "Theta", "Accuracy");
-            //meanScatterPlot.
-
-            //ScatterplotBox.Show("Expected vs. Real", thetas, meanValues);
-            Random r = new Random();
 
             int max = thetas.Length;
 
-            //double[] x = new double[max];
-            //double[] y1 = new double[max];
-            
             double[] benchmarkAccuracies = new double[max];
+            double[] benchmarkVariances = new double[max];
 
+            //Create graph for means
             for (int i = 0; i < max; i++)
             {
-                //x[i] = i;
-                //y1[i] = r.Next(0, 50);
                 benchmarkAccuracies[i] = benchmarkIncomeAccuracy;
             }
 
-            ScatterplotView spv = new ScatterplotView();
-            spv.Dock = DockStyle.Fill;
-            spv.LinesVisible = true;
+            ScatterplotView meanPlot = new ScatterplotView();
+            meanPlot.Dock = DockStyle.Fill;
+            meanPlot.LinesVisible = true;
 
-            spv.Graph.GraphPane.AddCurve("Curve 1", thetas, meanValues, Color.Red, SymbolType.Circle);
-            spv.Graph.GraphPane.AddCurve("Curve 2", thetas, benchmarkAccuracies, Color.Blue, SymbolType.Diamond);
+            meanPlot.Graph.GraphPane.AddCurve("Curve 1", thetas, meanValues, Color.Red, SymbolType.Circle);
+            meanPlot.Graph.GraphPane.AddCurve("Curve 2", thetas, benchmarkAccuracies, Color.Blue, SymbolType.Diamond);
 
-            spv.Graph.GraphPane.AxisChange();
+            meanPlot.Graph.GraphPane.AxisChange();
 
-            Form f1 = new Form();
-            f1.Width = 600;
-            f1.Height = 400;
-            f1.Controls.Add(spv);
-            f1.ShowDialog();
-            //ScatterplotBox.Show("Expected results", testingInputs, testingOutputs);
-            //double randomizedIncomeAccuracy = IncomeDecision(randomizedIncomeTrainingDataset01, randomizedIncomeTestingDataset01);
+            Form meanForm = new Form();
+            meanForm.Width = 600;
+            meanForm.Height = 400;
+            meanForm.Controls.Add(meanPlot);
+            meanForm.ShowDialog();
+
+            //Create graph for variances
+            for (int i = 0; i < max; i++)
+            {
+                benchmarkVariances[i] = 0;
+            }
+
+            ScatterplotView variancePlot = new ScatterplotView();
+            variancePlot.Dock = DockStyle.Fill;
+            variancePlot.LinesVisible = true;
+
+            variancePlot.Graph.GraphPane.AddCurve("Curve 1", thetas, varianceValues, Color.Red, SymbolType.Circle);
+            variancePlot.Graph.GraphPane.AddCurve("Curve 2", thetas, benchmarkVariances, Color.Blue, SymbolType.Diamond);
+
+            variancePlot.Graph.GraphPane.AxisChange();
+
+            Form varianceForm = new Form();
+            varianceForm.Width = 600;
+            varianceForm.Height = 400;
+            varianceForm.Controls.Add(variancePlot);
+            varianceForm.ShowDialog();
         }
 
         //Method to load in a dataset from one of the CSVs (training or testing)
@@ -162,15 +173,6 @@ namespace CS_7850_RR_Classifier
             var rowCount = 0;
             StreamReader reader;
             DataTable dataset = new DataTable("Income Dataset");
-            //if (trainingOrTesting == 0)
-            //{
-            //    dataset = new DataTable("Income Training Dataset");
-            //}
-            //else
-            //{
-            //    dataset = new DataTable("Income Testing Dataset");
-            //}
-
 
             //Stripping out all discrete string data - unsure how to binarize.
             dataset.Columns.Add("RowNumber");
@@ -190,24 +192,6 @@ namespace CS_7850_RR_Classifier
             //dataset.Columns.Add("NativeCountry");
             dataset.Columns.Add("SalaryLabel");
 
-            //Ranges and median of range for each continuous column:
-            //Age: 17 - 90; Median: 53.5
-            //FinalWeight: 19302 - 1226583; Median: 622942.5
-            //EducationNum: 1 - 16; Median: 8.5
-            //CapitalGain: 0 - 99999; Median: 49999.5
-            //CapitalLoss: 0 - 4356; Median: 2178
-            //HoursPerWeek: 1 - 99; Median: 50
-
-
-            //Read in data
-            //if (trainingOrTesting == 0)
-            //{
-            //    reader = new StreamReader("Datasets/paper-dataset-income-training.data");
-            //}
-            //else
-            //{
-            //    reader = new StreamReader("Datasets/paper-dataset-income-testing.data");
-            //}
             reader = new StreamReader("Datasets/paper-dataset-income-top10k.data");
             List<double> ages = new List<double>();
             List<double> finalWeights = new List<double>();
@@ -260,31 +244,15 @@ namespace CS_7850_RR_Classifier
             return dataset;
         }
 
-
-        //Taken from https://social.msdn.microsoft.com/Forums/vstudio/en-US/3843c413-7604-4be3-ab30-f96c3a952e52/compute-median-of-values-in-a-datatable-column?forum=vbgeneral
-        //Modified to get median from min-max range, not full data
         public static double GetMedianFromArray(double[] values)
         {
             double median;
-            //median = Accord.Statistics.Measures.Median(values);
+            //sort the array
             Array.Sort(values);
+            //Get min-max range of attribute and get median of range
             double max = values.Last();
             double min = values.First();
             median = (min + max) / 2.0;
-            //sort the array
-            
-            //if (values.Length % 2 != 0)
-            //{
-            //    median = values[values.Length / 2];
-            //}
-            //else
-            //{
-            //    int middle = values.Length / 2;
-            //    double first = values[middle];
-            //    double second = values[middle - 1];
-            //    median = (first + second) / 2;
-            //}
-            //Max = values.Last();
 
             return median;
         }
@@ -486,9 +454,7 @@ namespace CS_7850_RR_Classifier
                     var capitalGain = row["CapitalGain"];
                     var capitalLoss = row["CapitalLoss"];
                     var hoursPerWeek = row["HoursPerWeek"];
-                    //var salary = row["SalaryLabel"];
-                    //dataset.Columns.Add("SalaryLabel");
-                    //int newSalary = 0;   
+
                     int newAge = 0;
                     int newFinalWeight = 0;
                     int newEducationNum = 0;
@@ -496,9 +462,8 @@ namespace CS_7850_RR_Classifier
                     int newCapitalGain = 0;
                     int newCapitalLoss = 0;
                     int newHoursPerWeek = 0;
-                    //int newSalary = 0;
 
-                    //Flip salary
+                    //Flip attributes
                     if (Convert.ToInt32(age) == 0)
                     {
                         newAge = 1;
@@ -527,12 +492,9 @@ namespace CS_7850_RR_Classifier
                     {
                         newHoursPerWeek = 1;
                     }
-                    //if (Convert.ToInt32(salary) == 0)
-                    //{
-                    //    newSalary = 1;
-                    //}
+
+
                     //Insert flipped attributes into datatable.
-                    //row["Salary"] = newSalary;
                     row["Age"] = newAge;
                     row["FinalWeight"] = newFinalWeight;
                     row["EducationNum"] = newEducationNum;
@@ -540,14 +502,12 @@ namespace CS_7850_RR_Classifier
                     row["CapitalGain"] = newCapitalGain;
                     row["CapitalLoss"] = newCapitalLoss;
                     row["HoursPerWeek"] = newHoursPerWeek;
-                    //row["SalaryLabel"] = newSalary;
                 }
 
             }
 
             return randomizedDataset;
         }
-
         public static DataTable negateInputs(DataTable tableToNegate)
         {
             DataTable negatedTable = new DataTable("Negated Dataset");
@@ -563,9 +523,7 @@ namespace CS_7850_RR_Classifier
                 var capitalGain = row["CapitalGain"];
                 var capitalLoss = row["CapitalLoss"];
                 var hoursPerWeek = row["HoursPerWeek"];
-                var salary = row["SalaryLabel"];
-                //dataset.Columns.Add("SalaryLabel");
-                //int newSalary = 0;   
+
                 int newAge = 0;
                 int newFinalWeight = 0;
                 int newEducationNum = 0;
@@ -573,7 +531,6 @@ namespace CS_7850_RR_Classifier
                 int newCapitalGain = 0;
                 int newCapitalLoss = 0;
                 int newHoursPerWeek = 0;
-                int newSalary = 0;
 
                 //Flip salary
                 if (Convert.ToInt32(age) == 0)
@@ -604,12 +561,8 @@ namespace CS_7850_RR_Classifier
                 {
                     newHoursPerWeek = 1;
                 }
-                if (Convert.ToInt32(salary) == 0)
-                {
-                    newSalary = 1;
-                }
+
                 //Insert flipped attributes into datatable.
-                //row["Salary"] = newSalary;
                 row["Age"] = newAge;
                 row["FinalWeight"] = newFinalWeight;
                 row["EducationNum"] = newEducationNum;
@@ -617,12 +570,10 @@ namespace CS_7850_RR_Classifier
                 row["CapitalGain"] = newCapitalGain;
                 row["CapitalLoss"] = newCapitalLoss;
                 row["HoursPerWeek"] = newHoursPerWeek;
-                row["SalaryLabel"] = newSalary;
             }
 
             return negatedTable;
         }
-
         public static double IncomeDecision(DataTable incomeTrainingDataset, DataTable incomeTestingDataset)
         {
             //Get arrays for training inputs and outputs.
@@ -638,13 +589,6 @@ namespace CS_7850_RR_Classifier
 
             //Run classifier on testing inputs and get classified outputs
             int[] treeTestingOutputs = id3Trie.Decide(testingInputs);
-
-            //ScatterplotBox.Show();
-            //ScatterplotBox.Show("Expected vs. Real", testingOutputs, treeTestingOutputs);
-            //ScatterplotBox.Show("Expected results", testingInputs, testingOutputs);
-            //ScatterplotBox.Show("Decision Tree results", testingInputs, treeTestingOutputs)
-            //    .Hold();
-
 
             //Calculate accuracy
             double totalOutputs = 0;
@@ -675,17 +619,6 @@ namespace CS_7850_RR_Classifier
             int[][] trainingInputs = incomeTrainingDataset.ToJagged<int>("Age", "FinalWeight", "EducationNum", "Sex", "CapitalGain", "CapitalLoss", "HoursPerWeek");
             int[] trainingOutputs = incomeTrainingDataset.ToJagged<int>("SalaryLabel").GetColumn(0);
 
-
-            //double numberOfElementsWithAttribute0 = 0;
-            ////Count number of instances of 0 in dataset
-            //for (int i = 0; i < trainingOutputs.Length; i++)
-            //{
-            //    if (trainingOutputs[i] == 0)
-            //    {
-            //        numberOfElementsWithAttribute0++;
-            //    }
-            //}
-
             //Build tree from learning
             ModifiedTrie id3Trie = new ModifiedTrie(trainingInputs, trainingOutputs, trainingOutputs.Length, theta);
             
@@ -696,19 +629,6 @@ namespace CS_7850_RR_Classifier
 
             //Run classifier on testing inputs and get classified outputs
             int[] treeTestingOutputs = id3Trie.Decide(testingInputs);
-
-            DataTable complementTestingDataset = negateInputs(incomeTestingDataset);
-            int[][] complementTestingInputs = complementTestingDataset.ToJagged<int>("Age", "FinalWeight", "EducationNum", "Sex", "CapitalGain", "CapitalLoss", "HoursPerWeek");
-            int[] complementTestingOutputs = complementTestingDataset.ToJagged<int>("SalaryLabel").GetColumn(0);
-
-            int[] treeTestingComplementOutputs = id3Trie.Decide(complementTestingInputs);
-
-            //ScatterplotBox.Show();
-            //ScatterplotBox.Show("Expected vs. Real", testingOutputs, treeTestingOutputs);
-            //ScatterplotBox.Show("Expected results", testingInputs, testingOutputs);
-            //ScatterplotBox.Show("Decision Tree results", testingInputs, treeTestingOutputs)
-            //    .Hold();
-
 
             //Calculate accuracy
             double totalOutputs = 0;
@@ -729,27 +649,6 @@ namespace CS_7850_RR_Classifier
                 totalOutputs++;
             }
 
-            //double totalComplementCorrectOutputs = 0;
-            //for (int i = 0; i < complementTestingOutputs.Length; i++)
-            //{
-            //    if (complementTestingOutputs[i] == treeTestingComplementOutputs[i])
-            //    {
-            //        totalComplementCorrectOutputs++;
-            //    }
-            //    //If -1 is in any outputs, something went wrong.  This shouldn't be reached - it's for debugging.
-            //    if (treeTestingComplementOutputs[i] == -1)
-            //    {
-            //        return -1;
-            //    }
-            //}
-
-            //double ratioCorrect = totalCorrectOutputs / totalOutputs;
-            //double ratioComplementCorrect = totalComplementCorrectOutputs / totalOutputs;
-
-            //double realAccuracyTop = ratioCorrect + (ratioComplementCorrect * (1 - theta));
-            //double realAccuracyBottom = 1 - (2 * theta);
-
-            //double accuracy = realAccuracyTop / realAccuracyBottom;
             double accuracy = totalCorrectOutputs / totalOutputs;
             return accuracy;
         }
@@ -757,13 +656,21 @@ namespace CS_7850_RR_Classifier
         public static double[] testRandomization(DataTable incomeTrainingDataset, DataTable incomeTestingDataset, double theta)
         {
             List<double> accuracyMeasurements = new List<double>();
-
-            //DataTable randomizedIncomeTestingDataset = RandomizeIncomeDataset(incomeTestingDataset, 1, theta);
-
-            for (int i = 0; i < 50; i++)
+            double randomizedIncomeAccuracy;
+            for (int i = 0; i < 3; i++)
             {
                 DataTable randomizedIncomeTrainingDataset = RandomizeIncomeDataset(incomeTrainingDataset, 0, theta);
-                double randomizedIncomeAccuracy = ModifiedIncomeDecision(randomizedIncomeTrainingDataset, incomeTestingDataset, theta);
+                //The commented out code below flips the dataset at thetas under 0.5, greatly reducing the performance degradation by artifically keeping theta rates
+                //always above 0.5 for the purposes of the classifier.
+                //if(theta < 0.5)
+                //{
+                //    randomizedIncomeTrainingDataset = negateInputs(randomizedIncomeTrainingDataset);
+                //    randomizedIncomeAccuracy = ModifiedIncomeDecision(randomizedIncomeTrainingDataset, incomeTestingDataset, 1 - theta);
+                //}
+                //else
+                //{
+                    randomizedIncomeAccuracy = ModifiedIncomeDecision(randomizedIncomeTrainingDataset, incomeTestingDataset, theta);
+                //}
                 accuracyMeasurements.Add(randomizedIncomeAccuracy);
             }
             double[] accuracyArray = accuracyMeasurements.ToArray<double>();

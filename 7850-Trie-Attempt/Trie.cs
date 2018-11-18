@@ -20,8 +20,7 @@ namespace CS_7850_RR_Classifier
             //the int is the value of the attribute (0 or 1), the Node is the next node.
             public Dictionary<int, Node> Edges = new Dictionary<int, Node>();
 
-            //expressionE is a Dictionary used to set up the attribute expression as described in the paper - the first int is the attribute number and the second int is the value
-            //, Dictionary<int, int> expressionE
+
             public Node(int[][] inputs, int[] outputs, int[] attributes, int height, int majorityClassOfParentNode)
             {
                 //If outputs is empty, set the class to be the majority class of the parent node
@@ -49,7 +48,6 @@ namespace CS_7850_RR_Classifier
                     if (numberOfClassZeroItems == 0 || numberOfClassZeroItems == outputs.Length)
                     {
                         Class = outputs[0];
-                        //IsTerminal = true;
                     }
                     else
                     {
@@ -60,7 +58,6 @@ namespace CS_7850_RR_Classifier
                         {
                             Class = Accord.Statistics.Measures.Mode(outputs);
                             Attribute = -1;
-                            //IsTerminal = true;
                         }
                         else
                         {
@@ -95,13 +92,6 @@ namespace CS_7850_RR_Classifier
                             newAttributeList.Remove(maxInfoGainAttribute);
 
                             ////Make new array of attributes without the max gain attribute
-                            //for (int i = 0; i < attributes.Length; i++)
-                            //{
-                            //    if (i != maxInfoGainAttribute)
-                            //    {
-                            //        newAttributeList.Add(i);
-                            //    }
-                            //}
 
                             int[] newAttributes = newAttributeList.ToArray<int>();
 
@@ -161,10 +151,8 @@ namespace CS_7850_RR_Classifier
 
         public Trie(int[][] inputs, int[] outputs, int totalSetSize)
         {
-            //int attributeCount = 0;
             List<int> attributes = new List<int>();
-            //attributeCount = inputs[i].Length;
-                //attributes = new int[attributeCount];
+
             //number of attributes == length of any input[]
             for (int j = 0; j < inputs[0].Length; j++)
             {
@@ -298,10 +286,5 @@ namespace CS_7850_RR_Classifier
             return infoGain;
         }
 
-        //public static double AttributeEntropy(int[] outputs)
-        //{
-
-        //    return 1.0;
-        //}
     }
 }
