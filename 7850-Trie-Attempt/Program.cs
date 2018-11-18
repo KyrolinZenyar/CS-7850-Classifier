@@ -657,7 +657,7 @@ namespace CS_7850_RR_Classifier
         {
             List<double> accuracyMeasurements = new List<double>();
             double randomizedIncomeAccuracy;
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 50; i++)
             {
                 DataTable randomizedIncomeTrainingDataset = RandomizeIncomeDataset(incomeTrainingDataset, 0, theta);
                 //The commented out code below flips the dataset at thetas under 0.5, greatly reducing the performance degradation by artifically keeping theta rates
